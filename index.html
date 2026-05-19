@@ -1,0 +1,2016 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Robin — Hybrid Training</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#2c1810">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Robin Training">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:       #f5f3ee;
+  --bg2:      #ffffff;
+  --bg3:      #edeae3;
+  --bg4:      #e2ddd4;
+  --border:   #d8d3c8;
+  --border2:  #bfb9ac;
+  --text:     #18160f;
+  --text2:    #3d3a30;
+  --text3:    #7a7568;
+  --text4:    #a8a49a;
+
+  /* accent system — warmer, more distinct */
+  --accent:   #8b5e3c;    /* terracotta brown */
+  --accent-l: #f5ede4;
+  --accent-b: #d4a882;
+
+  --grn:      #3d6b42;    /* forest green */
+  --grn-l:    #e6f0e7;
+  --grn-b:    #8fba93;
+
+  --blue:     #2c5f8a;    /* ink blue */
+  --blue-l:   #e4edf6;
+  --blue-b:   #7aaed4;
+
+  --run:      #1f7a60;    /* deep teal */
+  --run-l:    #e2f4ef;
+  --run-b:    #6dbda6;
+
+  --warn:     #8a5a1e;    /* amber */
+  --warn-l:   #fdf1e0;
+  --warn-b:   #d4a054;
+
+  --combo:    #5c3d82;    /* rich purple */
+  --combo-l:  #f0eaf8;
+  --combo-b:  #a882d4;
+
+  --shin:     #c0392b;    /* red-orange for shin/running injury prevention */
+  --shin-l:   #fdf0ee;
+  --shin-b:   #e8927a;
+
+  --radius:   12px;
+  --radius-sm:8px;
+  --safe-top: env(safe-area-inset-top);
+  --safe-bot: env(safe-area-inset-bottom);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior: none;
+}
+
+/* ── HEADER ── */
+.header {
+  background: linear-gradient(135deg, #2c1810 0%, #1f3828 50%, #1a2a4a 100%);
+  border-bottom: none;
+  padding: 20px 16px 18px;
+  padding-top: calc(20px + var(--safe-top));
+  position: sticky; top: 0; z-index: 100;
+  box-shadow: 0 2px 16px rgba(0,0,0,.18);
+}
+.header-name {
+  font-family: 'Lora', serif;
+  font-size: 22px;
+  font-weight: 600;
+  color: #f0ebe0;
+  letter-spacing: -0.3px;
+}
+.header-name em { font-style: italic; color: #d4a882; font-weight: 400; }
+.header-meta {
+  display: flex; flex-wrap: wrap; gap: 8px;
+  margin-top: 8px;
+}
+.meta-pill {
+  font-size: 11px; color: rgba(240,235,224,.6);
+  background: rgba(255,255,255,.1);
+  padding: 3px 9px; border-radius: 20px;
+  border: 1px solid rgba(255,255,255,.15);
+  backdrop-filter: blur(4px);
+}
+.meta-pill b { color: #d4a882; font-weight: 500; }
+
+/* ── MAIN NAV TABS ── */
+.nav-scroll {
+  background: var(--bg2);
+  border-bottom: 2px solid var(--border);
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  box-shadow: 0 1px 4px rgba(0,0,0,.06);
+  /* iOS: pan-x alone can swallow taps in some Safari versions.
+     Letting iOS decide (auto) plus relying on click delegation
+     in JS gives reliable taps + horizontal swipe. */
+  touch-action: auto;
+}
+.nav-scroll::-webkit-scrollbar { display: none; }
+.nav-tabs {
+  display: flex;
+  padding: 0 12px;
+  gap: 0;
+  min-width: max-content;
+}
+.nav-tab {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text3);
+  padding: 12px 15px;
+  border: none;
+  background: transparent;
+  border-bottom: 3px solid transparent;
+  cursor: pointer;          /* CRITICAL for iOS click on <div> */
+  white-space: nowrap;
+  letter-spacing: .01em;
+  transition: color .15s, border-color .15s;
+  -webkit-tap-highlight-color: rgba(139,94,60,.15); /* visible feedback */
+  user-select: none;
+  -webkit-user-select: none;
+  margin-bottom: -2px;
+  /* manipulation = allow tap, disable double-tap zoom delay */
+  touch-action: manipulation;
+  display: flex;
+  align-items: center;
+  min-height: 44px;         /* Apple HIG minimum tap target */
+  position: relative;
+  z-index: 1;
+}
+.nav-tab.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 600; }
+.nav-tab.run-t.active { color: var(--run); border-bottom-color: var(--run); }
+.nav-tab.combo-t.active { color: var(--combo); border-bottom-color: var(--combo); }
+
+/* ── CONTENT AREA ── */
+.content { padding: 0 0 80px; }
+.pane { display: none; }
+.pane.active { display: block; }
+.sub-pane { display: none; }
+.sub-pane.active { display: block; }
+
+/* ── SECTION LABEL ── */
+.slabel {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--text4);
+  padding: 16px 16px 6px;
+}
+.slabel:first-child { padding-top: 14px; }
+
+/* ── ALERT BANNERS ── */
+.alert {
+  margin: 12px 16px 0;
+  padding: 10px 13px;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  line-height: 1.6;
+  border-left: 3px solid;
+}
+.alert-i { background: var(--blue-l); border-color: var(--blue); color: #1a3a5c; }
+.alert-s { background: var(--grn-l); border-color: var(--grn); color: #1a3a1c; }
+.alert-w { background: var(--warn-l); border-color: var(--warn); color: #5a3000; }
+.alert-r { background: var(--run-l); border-color: var(--run); color: #0a3a2c; }
+.alert-c { background: var(--combo-l); border-color: var(--combo); color: #2a1050; }
+
+/* ── CARD ── */
+.card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin: 8px 16px 0;
+  overflow: hidden;
+  box-shadow: 0 1px 4px rgba(0,0,0,.05);
+}
+.card-head {
+  background: linear-gradient(135deg, var(--bg3) 0%, var(--bg4) 100%);
+  border-bottom: 1px solid var(--border);
+  padding: 9px 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.card-head-title { font-size: 12px; font-weight: 600; color: var(--text2); }
+.card-head-sub { font-size: 11px; color: var(--text4); }
+
+/* ── PHASE DIVIDER ── */
+.phase-bar {
+  background: linear-gradient(90deg, var(--bg4) 0%, var(--bg3) 100%);
+  border-bottom: 1px solid var(--border);
+  border-top: 1px solid var(--border);
+  padding: 6px 14px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--text3);
+}
+
+/* ── EXERCISE ROW ── */
+.ex-row {
+  border-bottom: 1px solid var(--border);
+  padding: 11px 14px;
+}
+.ex-row:last-child { border-bottom: none; }
+.ex-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+}
+.ex-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+  flex: 1;
+}
+.ex-badge {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--accent);
+  background: var(--accent-l);
+  padding: 2px 9px;
+  border-radius: 20px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  border: 1px solid var(--accent-b);
+}
+.ex-badge.run  { color: var(--run); background: var(--run-l); border-color: var(--run-b); }
+.ex-badge.grn  { color: var(--grn); background: var(--grn-l); border-color: var(--grn-b); }
+.ex-badge.blue { color: var(--blue); background: var(--blue-l); border-color: var(--blue-b); }
+.ex-badge.combo{ color: var(--combo); background: var(--combo-l); border-color: var(--combo-b); }
+.ex-badge.shin { color: var(--shin); background: var(--shin-l); border-color: var(--shin-b); }
+.ex-note {
+  font-size: 12px;
+  color: var(--text3);
+  margin-top: 3px;
+  line-height: 1.5;
+}
+.ex-tag {
+  font-size: 10px;
+  color: var(--text4);
+  margin-top: 2px;
+  letter-spacing: .02em;
+}
+
+/* ── WEEK OVERVIEW GRID ── */
+.week-overview {
+  margin: 10px 16px 0;
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+.wov-cell {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 7px 4px;
+  text-align: center;
+}
+.wov-day { font-size: 9px; color: var(--text4); letter-spacing: .06em; margin-bottom: 3px; text-transform: uppercase; }
+.wov-type { font-size: 9px; font-weight: 600; color: var(--text2); line-height: 1.3; }
+.wov-eve { font-size: 9px; color: var(--run); margin-top: 2px; font-weight: 500; }
+.wov-rest { background: var(--bg3); }
+.wov-rest .wov-type { color: var(--text4); }
+
+/* ── EXPANDABLE DAY ── */
+.day-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin: 6px 16px 0;
+  overflow: hidden;
+  box-shadow: 0 1px 4px rgba(0,0,0,.04);
+}
+.day-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px 14px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: rgba(0,0,0,.06);
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+  transition: background .12s;
+  min-height: 44px;
+  position: relative;
+  z-index: 1;
+}
+.day-head:active { background: var(--bg3); }
+.day-dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.dot-lower { background: linear-gradient(135deg,var(--accent),var(--accent-b)); box-shadow:0 1px 4px rgba(139,94,60,.4); }
+.dot-upper { background: linear-gradient(135deg,var(--blue),var(--blue-b)); box-shadow:0 1px 4px rgba(44,95,138,.4); }
+.dot-cond  { background: linear-gradient(135deg,var(--grn),var(--grn-b)); box-shadow:0 1px 4px rgba(61,107,66,.4); }
+.dot-rest  { background: var(--text4); }
+.day-info { flex: 1; min-width: 0; }
+.day-name { font-size: 13px; font-weight: 600; color: var(--text); }
+.day-sub  { font-size: 11px; color: var(--text3); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.day-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.day-chev { font-size: 16px; color: var(--text4); transition: transform .2s; line-height: 1; }
+.day-chev.open { transform: rotate(90deg); }
+
+.day-body {
+  display: none;
+  border-top: 1px solid var(--border);
+  background: var(--bg);
+}
+.day-body.open { display: block; }
+
+/* ── SESSION BLOCK inside day ── */
+.sess-block { padding: 12px 14px 0; }
+.sess-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  color: var(--text4);
+  margin-bottom: 8px;
+}
+.sess-block + .sess-block { border-top: 1px solid var(--border); margin-top: 12px; padding-top: 12px; }
+.sess-block:last-child { padding-bottom: 14px; }
+
+/* ── EXERCISE LIST (bullet style) ── */
+.ex-list { list-style: none; }
+.ex-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+.ex-list li:last-child { border-bottom: none; }
+.ex-list .li-name {
+  color: var(--text);
+  font-weight: 400;
+  flex: 1;
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+}
+.ex-list .li-name::before {
+  content: '';
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  flex-shrink: 0;
+  margin-bottom: 1px;
+}
+.ex-list .li-note {
+  font-size: 11px;
+  color: var(--text3);
+  display: block;
+  margin-left: 13px;
+  line-height: 1.45;
+  margin-top: 2px;
+}
+.ex-list .li-sets {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.ex-list.run-list .li-name::before { background: var(--run); }
+.ex-list.run-list .li-sets { color: var(--run); }
+.ex-list.grn-list .li-name::before { background: var(--grn); }
+.ex-list.grn-list .li-sets { color: var(--grn); }
+.ex-list.combo-list .li-name::before { background: var(--combo); }
+.ex-list.combo-list .li-sets { color: var(--combo); }
+.ex-list.shin-list .li-name::before { background: var(--shin); }
+.ex-list.shin-list .li-sets { color: var(--shin); }
+
+/* ── MINOR ADD BLOCK ── */
+.minor-block {
+  background: var(--warn-l);
+  border: 1px solid var(--warn-b);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  margin-top: 6px;
+}
+.minor-block.grn { background: var(--grn-l); border-color: var(--grn-b); }
+.minor-block.run-bg { background: var(--run-l); border-color: var(--run-b); }
+.minor-block.shin-bg { background: var(--shin-l); border-color: var(--shin-b); }
+.minor-block.combo-bg { background: var(--combo-l); border-color: var(--combo-b); }
+/* ── COMBO / SHIN EXTRAS ── */
+.combo-summary{background:linear-gradient(135deg,var(--combo-l),#fdf9ff);border:1px solid var(--combo-b);border-radius:var(--radius-sm);padding:10px 14px;margin:8px 16px 0;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px}
+.combo-summary-item{text-align:center}
+.combo-summary-val{font-size:16px;font-weight:700;color:var(--combo);font-family:'Lora',serif}
+.combo-summary-key{font-size:10px;color:var(--text3);margin-top:1px;letter-spacing:.04em;text-transform:uppercase}
+.tmill-step{width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,var(--run),var(--run-b));color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;box-shadow:0 1px 4px rgba(31,122,96,.3)}
+.minor-title {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--warn);
+  margin-bottom: 6px;
+}
+.minor-title.grn { color: var(--grn); }
+.minor-title.run-t { color: var(--run); }
+
+/* ── REST BLOCK ── */
+.rest-card {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin: 6px 16px 0;
+  padding: 14px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--text3);
+  font-style: italic;
+}
+
+/* ── BADGE ── */
+.badge {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 500;
+  padding: 2px 7px;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+.badge-grn  { background: #eef6ec; color: var(--grn); border: 1px solid #c8ddc4; }
+.badge-warn { background: #fdf6ec; color: var(--warn); border: 1px solid #e0c898; }
+.badge-run  { background: #eaf5f2; color: var(--run); border: 1px solid #b0d8d0; }
+.badge-none { background: var(--bg3); color: var(--text4); border: 1px solid var(--border); }
+.badge-combo{ background: #f4eef8; color: var(--combo); border: 1px solid #d0c0e0; }
+
+/* ── SUB-TABS ── */
+.sub-tabs {
+  display: flex;
+  gap: 6px;
+  padding: 12px 16px 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  touch-action: auto;
+}
+.sub-tabs::-webkit-scrollbar { display: none; }
+.sub-tab {
+  font-size: 11px;
+  font-weight: 500;
+  padding: 9px 14px;
+  border-radius: 20px;
+  border: 1px solid var(--border2);
+  background: transparent;
+  color: var(--text3);
+  cursor: pointer;
+  white-space: nowrap;
+  font-family: 'DM Sans', sans-serif;
+  -webkit-tap-highlight-color: rgba(0,0,0,.08);
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+  transition: all .15s;
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  position: relative;
+  z-index: 1;
+}
+.sub-tab.active { background: var(--text); color: var(--bg2); border-color: var(--text); font-weight: 600; }
+.sub-tab.run-st.active { background: var(--run); border-color: var(--run); color: #fff; }
+.sub-tab.combo-st.active { background: var(--combo); border-color: var(--combo); color: #fff; }
+
+/* ── PROGRESS BAR ── */
+.prog-wrap { margin: 6px 0; }
+.prog-label { display: flex; justify-content: space-between; font-size: 11px; color: var(--text3); margin-bottom: 4px; }
+.prog-track { height: 4px; background: var(--bg4); border-radius: 4px; }
+.prog-fill  { height: 100%; border-radius: 4px; background: linear-gradient(90deg, var(--run), #6abba8); }
+
+/* ── TREADMILL BLOCK ── */
+.tmill-row {
+  display: flex;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+  align-items: flex-start;
+}
+.tmill-row:last-child { border-bottom: none; }
+.tmill-info { flex: 1; }
+.tmill-name { font-size: 13px; font-weight: 500; color: var(--text); }
+.tmill-note { font-size: 11px; color: var(--text3); margin-top: 2px; line-height: 1.45; }
+.tmill-val  { font-size: 12px; font-weight: 600; color: var(--run); white-space: nowrap; flex-shrink: 0; }
+
+/* ── MOBILE ADJUSTMENTS ── */
+@media (max-width: 430px) {
+  .week-overview { grid-template-columns: repeat(7, 1fr); }
+  .wov-day { font-size: 8px; }
+  .wov-type { font-size: 9px; }
+  .wov-eve { font-size: 8px; }
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-name">Robin — <em>Hybrid Block</em></div>
+  <div class="header-meta">
+    <span class="meta-pill">30 yrs · <b>83 kg</b></span>
+    <span class="meta-pill">5′11.5″</span>
+    <span class="meta-pill">5 yrs strength</span>
+    <span class="meta-pill">Running → <b>10 km target</b></span>
+  </div>
+</div>
+
+<!-- NAV TABS -->
+<div class="nav-scroll" id="navScroll">
+  <div class="nav-tabs">
+    <div class="nav-tab active"  onclick="showMain('guide',this)">How to Follow</div>
+    <div class="nav-tab"        onclick="showMain('mob',this)">Mobility</div>
+    <div class="nav-tab"        onclick="showMain('w1',this)">Week 1</div>
+    <div class="nav-tab"        onclick="showMain('w2',this)">Week 2</div>
+    <div class="nav-tab"        onclick="showMain('minor',this)">Minor</div>
+    <div class="nav-tab run-t"  onclick="showMain('run',this)">Evening Run</div>
+    <div class="nav-tab combo-t" onclick="showMain('combo',this)">Combined</div>
+  </div>
+</div>
+
+<div class="content">
+
+<!-- ══════════════════════════════════════════ -->
+<!-- PANE: HOW TO FOLLOW                       -->
+<!-- ══════════════════════════════════════════ -->
+<div class="pane active" id="tab-guide">
+
+  <!-- HERO BLOCK -->
+  <div style="background:linear-gradient(135deg,#2c1810 0%,#1f3828 55%,#1a2a4a 100%);margin:0;padding:20px 16px 22px;">
+    <div style="font-family:'Lora',serif;font-size:19px;font-weight:600;color:#f0ebe0;letter-spacing:-.3px;margin-bottom:6px">Your 2-year hybrid roadmap</div>
+    <div style="font-size:12px;color:rgba(240,235,224,.65);line-height:1.6">6 training days · Wednesday full rest · Morning strength · Evening run on select days · Same block repeats, only the small things progress</div>
+    <div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap">
+      <div style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);border-radius:8px;padding:8px 12px;text-align:center;flex:1;min-width:70px">
+        <div style="font-size:18px;font-weight:700;color:#d4a882;font-family:'Lora',serif">6</div>
+        <div style="font-size:10px;color:rgba(240,235,224,.55);margin-top:2px;letter-spacing:.05em;text-transform:uppercase">days/week</div>
+      </div>
+      <div style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);border-radius:8px;padding:8px 12px;text-align:center;flex:1;min-width:70px">
+        <div style="font-size:18px;font-weight:700;color:#6dbda6;font-family:'Lora',serif">3</div>
+        <div style="font-size:10px;color:rgba(240,235,224,.55);margin-top:2px;letter-spacing:.05em;text-transform:uppercase">runs/week</div>
+      </div>
+      <div style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);border-radius:8px;padding:8px 12px;text-align:center;flex:1;min-width:70px">
+        <div style="font-size:18px;font-weight:700;color:#a882d4;font-family:'Lora',serif">2</div>
+        <div style="font-size:10px;color:rgba(240,235,224,.55);margin-top:2px;letter-spacing:.05em;text-transform:uppercase">week block</div>
+      </div>
+      <div style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);border-radius:8px;padding:8px 12px;text-align:center;flex:1;min-width:70px">
+        <div style="font-size:18px;font-weight:700;color:#8fba93;font-family:'Lora',serif">10 km</div>
+        <div style="font-size:10px;color:rgba(240,235,224,.55);margin-top:2px;letter-spacing:.05em;text-transform:uppercase">run target</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 1 — THE DAILY SEQUENCE -->
+  <p class="slabel" style="margin-top:14px">Step 1 — Understand the daily sequence</p>
+  <div class="card">
+    <div class="card-head"><span class="card-head-title">Every training day follows this exact order</span></div>
+    <div style="padding:0 14px">
+      <!-- sequence steps -->
+      <div style="display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--border);align-items:flex-start">
+        <div style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent-b));color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 1px 4px rgba(139,94,60,.35)">1</div>
+        <div>
+          <div style="font-size:13px;font-weight:600;color:var(--text)">Pre-workout mobility</div>
+          <div style="font-size:12px;color:var(--text3);margin-top:3px;line-height:1.5">7–13 min depending on the day. Lower days = 13 min full protocol. Upper days = 7 min. Conditioning = 8 min. <b style="color:var(--text2)">Never skip this.</b> It is not warming up — it is fixing the structural problems that would stop you training in 6 months.</div>
+          <div style="font-size:11px;color:var(--accent);margin-top:4px;font-weight:500">→ See Mobility tab</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--border);align-items:flex-start">
+        <div style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(--blue),var(--blue-b));color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 1px 4px rgba(44,95,138,.35)">2</div>
+        <div>
+          <div style="font-size:13px;font-weight:600;color:var(--text)">Main strength session</div>
+          <div style="font-size:12px;color:var(--text3);margin-top:3px;line-height:1.5">The core of the plan. 45–60 min. This never changes across the 2-week block — only loads progress. Lower A (squat focus) · Lower B (hinge focus) · Lower C (weak points) · Upper Push · Upper Pull · Conditioning.</div>
+          <div style="font-size:11px;color:var(--blue);margin-top:4px;font-weight:500">→ See Week 1 or Week 2 tab, expand the day</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--border);align-items:flex-start">
+        <div style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(--grn),var(--grn-b));color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 1px 4px rgba(61,107,66,.35)">3</div>
+        <div>
+          <div style="font-size:13px;font-weight:600;color:var(--text)">Minor add-ons</div>
+          <div style="font-size:12px;color:var(--text3);margin-top:3px;line-height:1.5">5–6 min tacked onto the end of specific days. Foot conditioning (Mon/Thu/Sun), Neck (Tue/Fri), Traps (Fri). These are the small fixes that prevent the big injuries over 2 years. Week 1 = intro version. Week 2 = progressed version.</div>
+          <div style="font-size:11px;color:var(--grn);margin-top:4px;font-weight:500">→ See Minor tab for full reference</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:12px;padding:12px 0;align-items:flex-start">
+        <div style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(--run),var(--run-b));color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 1px 4px rgba(31,122,96,.35)">4</div>
+        <div>
+          <div style="font-size:13px;font-weight:600;color:var(--text)">Evening run <span style="font-size:11px;font-weight:400;color:var(--text3)">(select days only)</span></div>
+          <div style="font-size:12px;color:var(--text3);margin-top:3px;line-height:1.5"><b style="color:var(--text2)">Only on Tue, Fri, Sat.</b> Minimum 4–6 hours after the morning session. Mon, Thu, Sun are heavy leg days — running on those nights would hurt recovery. The plan is designed around this logic.</div>
+          <div style="font-size:11px;color:var(--run);margin-top:4px;font-weight:500">→ See Evening Run tab</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 2 — THE WEEK AT A GLANCE -->
+  <p class="slabel">Step 2 — Know your week before Monday comes</p>
+  <div class="card">
+    <div class="card-head"><span class="card-head-title">Full week at a glance</span><span class="card-head-sub">Repeats every 2 weeks</span></div>
+    <!-- day by day -->
+    <div style="padding:0">
+      <div style="display:grid;grid-template-columns:80px 1fr;gap:0;border-bottom:1px solid var(--border)">
+        <div style="background:linear-gradient(135deg,rgba(139,94,60,.12),rgba(139,94,60,.05));padding:10px 10px 10px 14px;display:flex;flex-direction:column;justify-content:center;border-right:1px solid var(--border)">
+          <div style="font-size:11px;font-weight:700;color:var(--accent)">MON</div>
+          <div style="font-size:10px;color:var(--text4);margin-top:2px">Lower A</div>
+        </div>
+        <div style="padding:10px 14px">
+          <div style="font-size:12px;font-weight:500;color:var(--text)">Squat focus · Mobility 13 min · Foot add · No evening run</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:3px">Back squat + BSS + RDL are the headline lifts. Legs take priority tonight — no run.</div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:80px 1fr;gap:0;border-bottom:1px solid var(--border)">
+        <div style="background:linear-gradient(135deg,rgba(44,95,138,.12),rgba(44,95,138,.05));padding:10px 10px 10px 14px;display:flex;flex-direction:column;justify-content:center;border-right:1px solid var(--border)">
+          <div style="font-size:11px;font-weight:700;color:var(--blue)">TUE</div>
+          <div style="font-size:10px;color:var(--text4);margin-top:2px">Upper Push</div>
+        </div>
+        <div style="padding:10px 14px">
+          <div style="font-size:12px;font-weight:500;color:var(--text)">Bench + OHP focus · Mobility 7 min · Neck add · <span style="color:var(--run)">Interval run evening</span></div>
+          <div style="font-size:11px;color:var(--text3);margin-top:3px">Best run day of the week — legs fully rested from yesterday's rest. Quality intervals.</div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:80px 1fr;gap:0;border-bottom:1px solid var(--border)">
+        <div style="background:var(--bg3);padding:10px 10px 10px 14px;display:flex;flex-direction:column;justify-content:center;border-right:1px solid var(--border)">
+          <div style="font-size:11px;font-weight:700;color:var(--text4)">WED</div>
+          <div style="font-size:10px;color:var(--text4);margin-top:2px">Full rest</div>
+        </div>
+        <div style="padding:10px 14px">
+          <div style="font-size:12px;font-weight:500;color:var(--text3)">Nothing. No gym, no run, no mobility. This is mandatory recovery — not laziness.</div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:80px 1fr;gap:0;border-bottom:1px solid var(--border)">
+        <div style="background:linear-gradient(135deg,rgba(139,94,60,.12),rgba(139,94,60,.05));padding:10px 10px 10px 14px;display:flex;flex-direction:column;justify-content:center;border-right:1px solid var(--border)">
+          <div style="font-size:11px;font-weight:700;color:var(--accent)">THU</div>
+          <div style="font-size:10px;color:var(--text4);margin-top:2px">Lower B</div>
+        </div>
+        <div style="padding:10px 14px">
+          <div style="font-size:12px;font-weight:500;color:var(--text)">Deadlift + hip thrust focus · Mobility 13 min · Foot add · No evening run</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:3px">Heaviest posterior chain day. Running after a deadlift session = injury waiting to happen.</div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:80px 1fr;gap:0;border-bottom:1px solid var(--border)">
+        <div style="background:linear-gradient(135deg,rgba(44,95,138,.12),rgba(44,95,138,.05));padding:10px 10px 10px 14px;display:flex;flex-direction:column;justify-content:center;border-right:1px solid var(--border)">
+          <div style="font-size:11px;font-weight:700;color:var(--blue)">FRI</div>
+          <div style="font-size:10px;color:var(--text4);margin-top:2px">Upper Pull</div>
+        </div>
+        <div style="padding:10px 14px">
+          <div style="font-size:12px;font-weight:500;color:var(--text)">Pull-up + row focus · Mobility 7 min · Traps + Neck add · <span style="color:var(--run)">Easy run evening</span></div>
+          <div style="font-size:11px;color:var(--text3);margin-top:3px">Second run day. Easy Zone 2 run — this is your long run that grows each block toward 5 km.</div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:80px 1fr;gap:0;border-bottom:1px solid var(--border)">
+        <div style="background:linear-gradient(135deg,rgba(61,107,66,.12),rgba(61,107,66,.05));padding:10px 10px 10px 14px;display:flex;flex-direction:column;justify-content:center;border-right:1px solid var(--border)">
+          <div style="font-size:11px;font-weight:700;color:var(--grn)">SAT</div>
+          <div style="font-size:10px;color:var(--text4);margin-top:2px">Conditioning</div>
+        </div>
+        <div style="padding:10px 14px">
+          <div style="font-size:12px;font-weight:500;color:var(--text)">KB + sled + circuit · Mob 8 min · No minor add · <span style="color:var(--run)">Short easy jog (optional)</span></div>
+          <div style="font-size:11px;color:var(--text3);margin-top:3px">Conditioning is already cardio-heavy. Evening jog is optional and short — skip if you feel wrecked.</div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:80px 1fr;gap:0">
+        <div style="background:linear-gradient(135deg,rgba(139,94,60,.12),rgba(139,94,60,.05));padding:10px 10px 10px 14px;display:flex;flex-direction:column;justify-content:center;border-right:1px solid var(--border)">
+          <div style="font-size:11px;font-weight:700;color:var(--accent)">SUN</div>
+          <div style="font-size:10px;color:var(--text4);margin-top:2px">Lower C</div>
+        </div>
+        <div style="padding:10px 14px">
+          <div style="font-size:12px;font-weight:500;color:var(--text)">Glute + weak point focus · Mobility 13 min · Foot add · No evening run</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:3px">Nordic + hip thrust day. Rest tonight. Monday repeats — you're in a new block now.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 3 — HOW THE 2-WEEK BLOCK WORKS -->
+  <p class="slabel">Step 3 — Understand the 2-week block logic</p>
+  <div class="card">
+    <div class="card-head"><span class="card-head-title">What changes, what doesn't</span></div>
+    <div style="padding:12px 14px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+        <div style="background:var(--grn-l);border:1px solid var(--grn-b);border-radius:8px;padding:10px">
+          <div style="font-size:10px;font-weight:700;color:var(--grn);letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px">Week 1 → Week 2: Changes</div>
+          <div style="font-size:11px;color:var(--text2);line-height:1.6">
+            • Minor add exercises progress<br>
+            • Run distances increase<br>
+            • Intervals get longer reps<br>
+            • Trap work gets heavier
+          </div>
+        </div>
+        <div style="background:var(--blue-l);border:1px solid var(--blue-b);border-radius:8px;padding:10px">
+          <div style="font-size:10px;font-weight:700;color:var(--blue);letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px">Always stays the same</div>
+          <div style="font-size:11px;color:var(--text2);line-height:1.6">
+            • All mobility protocols<br>
+            • All main strength sessions<br>
+            • Which days you run<br>
+            • Wednesday full rest
+          </div>
+        </div>
+      </div>
+      <div style="background:var(--warn-l);border:1px solid var(--warn-b);border-radius:8px;padding:10px;margin-bottom:10px">
+        <div style="font-size:11px;font-weight:600;color:var(--warn);margin-bottom:4px">What progresses BETWEEN block repeats (every 2 weeks)</div>
+        <div style="font-size:12px;color:var(--text2);line-height:1.6">Add weight to your main lifts each repeat. Add 1 interval rep or +100m to Tuesday runs. Add +0.5 km to Friday easy run. The block itself is the framework — you load it heavier each time you repeat it.</div>
+      </div>
+      <div style="font-size:12px;color:var(--text3);line-height:1.6;padding-top:4px">After Sunday of Week 2, go back to Monday of Week 1. This block can repeat for the full 2 years. The strength progresses through load, not exercise changes. The run progresses through distance. The minor components stay the same exercises — they just get harder within each block.</div>
+    </div>
+  </div>
+
+  <!-- STEP 4 — HOW TO USE THIS APP -->
+  <p class="slabel">Step 4 — How to use this app daily</p>
+  <div class="card">
+    <div class="card-head"><span class="card-head-title">Daily use workflow</span></div>
+    <div style="padding:0 14px">
+      <div style="display:flex;gap:10px;padding:11px 0;border-bottom:1px solid var(--border);align-items:flex-start">
+        <div style="width:6px;height:6px;border-radius:50%;background:var(--accent);flex-shrink:0;margin-top:5px"></div>
+        <div style="font-size:12px;color:var(--text2)"><b style="color:var(--text)">Morning — before gym:</b> Open <b>Mobility tab</b>. Find your session type (lower / upper / conditioning). Do it in order, in the gym.</div>
+      </div>
+      <div style="display:flex;gap:10px;padding:11px 0;border-bottom:1px solid var(--border);align-items:flex-start">
+        <div style="width:6px;height:6px;border-radius:50%;background:var(--blue);flex-shrink:0;margin-top:5px"></div>
+        <div style="font-size:12px;color:var(--text2)"><b style="color:var(--text)">During gym:</b> Open <b>Week 1 or Week 2 tab</b> (whichever week you're in). Tap the day to expand it. Main session is listed with every exercise, set, rep, and coaching note. Minor add is at the bottom of the same day.</div>
+      </div>
+      <div style="display:flex;gap:10px;padding:11px 0;border-bottom:1px solid var(--border);align-items:flex-start">
+        <div style="width:6px;height:6px;border-radius:50%;background:var(--run);flex-shrink:0;margin-top:5px"></div>
+        <div style="font-size:12px;color:var(--text2)"><b style="color:var(--text)">Evening (Tue/Fri/Sat):</b> Open <b>Evening Run tab</b>. Pick Week 1 or Week 2. Follow the exact treadmill or outdoor protocol for that day.</div>
+      </div>
+      <div style="display:flex;gap:10px;padding:11px 0;border-bottom:1px solid var(--border);align-items:flex-start">
+        <div style="width:6px;height:6px;border-radius:50%;background:var(--combo);flex-shrink:0;margin-top:5px"></div>
+        <div style="font-size:12px;color:var(--text2)"><b style="color:var(--text)">Busy or missed a session:</b> Open <b>Combined tab</b>. Pick Upper, Lower, or Full Body based on what the day was supposed to be. One session covers everything.</div>
+      </div>
+      <div style="display:flex;gap:10px;padding:11px 0;align-items:flex-start">
+        <div style="width:6px;height:6px;border-radius:50%;background:var(--grn);flex-shrink:0;margin-top:5px"></div>
+        <div style="font-size:12px;color:var(--text2)"><b style="color:var(--text)">Reference:</b> <b>Minor tab</b> has the full detail of neck, foot, and trap exercises if you want to understand them beyond the bullet points in the weekly tabs.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 5 — RULES TO NEVER BREAK -->
+  <p class="slabel">Step 5 — The non-negotiables</p>
+  <div class="card">
+    <div class="card-head" style="background:linear-gradient(135deg,var(--shin-l),#fff8f6);border-color:var(--shin-b)"><span class="card-head-title" style="color:var(--shin)">Rules you don't bend — for 2 years of staying healthy</span></div>
+    <div style="padding:0 14px">
+      <div style="display:flex;gap:10px;padding:11px 0;border-bottom:1px solid var(--border);align-items:flex-start">
+        <div style="font-size:14px;flex-shrink:0">🚫</div>
+        <div style="font-size:12px;color:var(--text2);line-height:1.5"><b style="color:var(--text)">Never run on Mon, Thu, or Sun evenings.</b> These are your three lower-body days. Squats, deadlifts, and hip thrusts fatigue the exact muscles running depends on. One run on a wrecked posterior chain is how you get a pulled hamstring that sets you back 6 weeks.</div>
+      </div>
+      <div style="display:flex;gap:10px;padding:11px 0;border-bottom:1px solid var(--border);align-items:flex-start">
+        <div style="font-size:14px;flex-shrink:0">🚫</div>
+        <div style="font-size:12px;color:var(--text2);line-height:1.5"><b style="color:var(--text)">Never skip Wednesday rest.</b> Six days of two-a-days demand one full rest. Your CNS, your joints, and your hormones all need this. Moving Wednesday rest to another day defeats the purpose.</div>
+      </div>
+      <div style="display:flex;gap:10px;padding:11px 0;border-bottom:1px solid var(--border);align-items:flex-start">
+        <div style="font-size:14px;flex-shrink:0">🚫</div>
+        <div style="font-size:12px;color:var(--text2);line-height:1.5"><b style="color:var(--text)">Never skip the tibialis raise before treadmill.</b> Shin splints are the most common reason new runners stop running. The tibialis raise is a 3-minute fix. It is in every combined session and every evening run cooldown — do it.</div>
+      </div>
+      <div style="display:flex;gap:10px;padding:11px 0;border-bottom:1px solid var(--border);align-items:flex-start">
+        <div style="font-size:14px;flex-shrink:0">🚫</div>
+        <div style="font-size:12px;color:var(--text2);line-height:1.5"><b style="color:var(--text)">Never increase both run distance and pace at the same time.</b> Add distance first — keep pace easy. Once distance is comfortable, then tighten pace. Doing both together is how stress fractures happen.</div>
+      </div>
+      <div style="display:flex;gap:10px;padding:11px 0;align-items:flex-start">
+        <div style="font-size:14px;flex-shrink:0">✅</div>
+        <div style="font-size:12px;color:var(--text2);line-height:1.5"><b style="color:var(--text)">If you miss a day — just skip it.</b> Don't try to make it up. Don't cram two sessions into one day. Move to the next day in the plan. The block is designed with enough frequency that missing one day changes nothing. Cramming destroys recovery.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 6 — SIGNS YOU'RE ON TRACK -->
+  <p class="slabel">Step 6 — How to know it's working</p>
+  <div class="card">
+    <div class="card-head"><span class="card-head-title">Month by month — what to expect</span></div>
+    <div style="padding:12px 14px">
+      <div style="border-left:3px solid var(--accent);padding-left:12px;margin-bottom:14px">
+        <div style="font-size:12px;font-weight:600;color:var(--accent);margin-bottom:4px">Month 1 — Blocks 1 &amp; 2</div>
+        <div style="font-size:12px;color:var(--text3);line-height:1.6">You'll feel clunky switching between gym and running. Legs may feel heavy on Tue evening. That's normal — your body is adapting to two stimuli. Foot conditioning will feel pointless. Do it anyway. You're building the base the whole plan runs on.</div>
+      </div>
+      <div style="border-left:3px solid var(--blue);padding-left:12px;margin-bottom:14px">
+        <div style="font-size:12px;font-weight:600;color:var(--blue);margin-bottom:4px">Month 2–3 — Blocks 3–6</div>
+        <div style="font-size:12px;color:var(--text3);line-height:1.6">Tuesday intervals will start to feel manageable. Friday easy run approaches 4–5 km. Gym lifts keep climbing. You'll notice hip flexors are looser. Squats feel more fluid. Arch in your foot starts to hold shape.</div>
+      </div>
+      <div style="border-left:3px solid var(--run);padding-left:12px;margin-bottom:14px">
+        <div style="font-size:12px;font-weight:600;color:var(--run);margin-bottom:4px">Month 4–6 — Blocks 7–12</div>
+        <div style="font-size:12px;color:var(--text3);line-height:1.6">Friday run hits 5 km. This is when you evolve the plan — add a proper long run day on Saturday (replace the jog). Strength numbers should be clearly above where you started. You're a hybrid athlete now, not a gym person who runs.</div>
+      </div>
+      <div style="border-left:3px solid var(--combo);padding-left:12px">
+        <div style="font-size:12px;font-weight:600;color:var(--combo);margin-bottom:4px">Year 2</div>
+        <div style="font-size:12px;color:var(--text3);line-height:1.6">Same block, heavier loads, longer runs. The strength foundation from year 1 makes every run easier. Your body knows the pattern — you're training instead of adapting. This is where the real gains compound.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- QUICK REFERENCE BOTTOM -->
+  <p class="slabel">Quick reference — tab map</p>
+  <div class="card" style="margin-bottom:0">
+    <div style="padding:0 14px">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--border)">
+        <span style="font-size:12px;font-weight:600;color:var(--text)">Mobility</span>
+        <span style="font-size:11px;color:var(--text3)">Pre-workout protocols by session type</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--border)">
+        <span style="font-size:12px;font-weight:600;color:var(--text)">Week 1 / Week 2</span>
+        <span style="font-size:11px;color:var(--text3)">Day-by-day full sessions, expandable</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--border)">
+        <span style="font-size:12px;font-weight:600;color:var(--text)">Minor</span>
+        <span style="font-size:11px;color:var(--text3)">Neck · Foot · Trap full reference</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--border)">
+        <span style="font-size:12px;font-weight:600;color:var(--run)">Evening Run</span>
+        <span style="font-size:11px;color:var(--text3)">Tue/Fri/Sat run protocols + form guide</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0">
+        <span style="font-size:12px;font-weight:600;color:var(--combo)">Combined</span>
+        <span style="font-size:11px;color:var(--text3)">One-session days — strength + treadmill</span>
+      </div>
+    </div>
+  </div>
+  <div style="height:16px"></div>
+
+</div>
+<!-- ══════════════════════════════════════════ -->
+<div class="pane" id="tab-mob">
+  <div class="alert alert-w" style="margin-top:12px">⚠ Lower body protocol is the longest — do it in full every lower day. Upper and conditioning are shorter. Desk sitting compresses the hip chain most severely.</div>
+
+  <p class="slabel">Lower body days — Mon · Thu · Sun · 13 min</p>
+  <div class="card">
+    <div class="card-head"><span class="card-head-title">Phase 1 — Foam rolling</span><span class="card-head-sub">3 min</span></div>
+    <div class="ex-row">
+      <div class="ex-top"><span class="ex-name">Quad roll</span><span class="ex-badge">90s / side</span></div>
+      <p class="ex-note">Face down, slow passes hip crease to knee. Pause 5s on any knot.</p>
+      <p class="ex-tag">Quad prep</p>
+    </div>
+    <div class="ex-row">
+      <div class="ex-top"><span class="ex-name">IT band + TFL</span><span class="ex-badge">60s / side</span></div>
+      <p class="ex-note">Side lying, outer thigh. Pause on tender spots.</p>
+      <p class="ex-tag">Knee tracking</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><span class="card-head-title">Phase 2 — Static stretching</span><span class="card-head-sub">4 min</span></div>
+    <div class="ex-row">
+      <div class="ex-top"><span class="ex-name">Hip flexor lunge stretch</span><span class="ex-badge">60s / side</span></div>
+      <p class="ex-note">Back knee on floor, lean forward into front hip. Most critical stretch for lower back. Non-negotiable.</p>
+      <p class="ex-tag">Hip flexor</p>
+    </div>
+    <div class="ex-row">
+      <div class="ex-top"><span class="ex-name">Pigeon pose</span><span class="ex-badge">45s / side</span></div>
+      <p class="ex-note">Front shin parallel, walk hands forward. Sub: figure-4 lying on back if hips don't reach floor.</p>
+      <p class="ex-tag">Glute / piriformis</p>
+    </div>
+    <div class="ex-row">
+      <div class="ex-top"><span class="ex-name">Couch stretch</span><span class="ex-badge">45s / side</span></div>
+      <p class="ex-note">Rear foot up on bench/sofa, front knee on floor, torso upright. Deepest quad and hip flexor stretch.</p>
+      <p class="ex-tag">Rectus femoris</p>
+    </div>
+    <div class="ex-row">
+      <div class="ex-top"><span class="ex-name">Adductor rock</span><span class="ex-badge">10 / side</span></div>
+      <p class="ex-note">Wide stance, shift hips side to side. Pause 2s at end range each side.</p>
+      <p class="ex-tag">Groin / hip</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><span class="card-head-title">Phase 3 — Activation</span><span class="card-head-sub">6 min</span></div>
+    <div class="ex-row">
+      <div class="ex-top"><span class="ex-name">Ankle wall drill</span><span class="ex-badge">10 reps / side</span></div>
+      <p class="ex-note">Foot 10 cm from wall, push knee forward keeping heel flat. Limited ankle = forward lean = knee and back issues.</p>
+      <p class="ex-tag">Ankle mobility</p>
+    </div>
+    <div class="ex-row">
+      <div class="ex-top"><span class="ex-name">Band clamshells</span><span class="ex-badge">2 × 15 / side</span></div>
+      <p class="ex-note">Medium band above knees. Rotate top knee up without hips rolling back. Fires glute medius — your knee-tracking fix.</p>
+      <p class="ex-tag">Glute medius</p>
+    </div>
+    <div class="ex-row">
+      <div class="ex-top"><span class="ex-name">Bodyweight glute bridge</span><span class="ex-badge">2 × 20</span></div>
+      <p class="ex-note">2s squeeze at top every rep. Re-activates sitting-inhibited glutes before any lower session.</p>
+      <p class="ex-tag">Glute activation</p>
+    </div>
+    <div class="ex-row">
+      <div class="ex-top"><span class="ex-name">Leg swings — forward/back</span><span class="ex-badge">10 / side</span></div>
+      <p class="ex-note">Hold rack, swing straight leg. Controlled, not ballistic. Hip flexor and hamstring dynamic prep.</p>
+      <p class="ex-tag">Hip flexor / ham</p>
+    </div>
+    <div class="ex-row">
+      <div class="ex-top"><span class="ex-name">Leg swings — lateral</span><span class="ex-badge">10 / side</span></div>
+      <p class="ex-note">Face rack, swing leg across body. Abductor/adductor warm-up before squats and lunges.</p>
+      <p class="ex-tag">Hip abductors</p>
+    </div>
+    <div class="ex-row">
+      <div class="ex-top"><span class="ex-name">World's greatest stretch</span><span class="ex-badge">3 / side</span></div>
+      <p class="ex-note">Lunge forward, drop back knee, rotate opposite arm to ceiling. Hold 2s. Full chain: hip flexor + thoracic + ankle.</p>
+      <p class="ex-tag">Full chain</p>
+    </div>
+    <div class="ex-row">
+      <div class="ex-top"><span class="ex-name">Deep squat hold</span><span class="ex-badge">60 seconds</span></div>
+      <p class="ex-note">Hold rack for balance, heels flat if possible. Breathe and relax into it. Improves squat depth passively over weeks.</p>
+      <p class="ex-tag">Depth / ankle</p>
+    </div>
+  </div>
+
+  <p class="slabel">Upper body days — Tue · Fri · 7 min</p>
+  <div class="card">
+    <div class="card-head"><span class="card-head-title">Phase 1 — Tissue prep</span><span class="card-head-sub">2 min</span></div>
+    <div class="ex-row">
+      <div class="ex-top"><span class="ex-name">Thoracic foam roller extension</span><span class="ex-badge">60 seconds</span></div>
+      <p class="ex-note">Roller perpendicular to spine, extend over it segment by segment. Opens desk-compressed T-spine before pressing.</p>
+      <p class="ex-tag">T-spine</p>
+    </div>
+    <div class="ex-row">
+      <div class="ex-top"><span class="ex-name">Doorway pec stretch</span><span class="ex-badge">30s / side</span></div>
+      <p class="ex-note">Forearm on frame at 90°, lean forward gently. Desk posture shortens pec minor — limits shoulder mechanics.</p>
+      <p class="ex-tag">Pec minor</p>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-head"><span class="card-head-title">Phase 2 — Mobility</span><span class="card-head-sub">3 min</span></div>
+    <div class="ex-row">
+      <div class="ex-top"><span class="ex-name">Thread the needle</span><span class="ex-badge">8 / side</span></div>
+      <p class="ex-note">On all fours, thread one arm under body along floor, hold 2s. Best thoracic rotation drill.</p>
+      <p class="ex-tag">T-spine rotation</p>
+    </div>
+    <div class="ex-row">
+      <div class="ex-top"><span class="ex-name">Shoulder CARs</span><span class="ex-badge">5 each way / arm</span></div>
+      <p class="ex-note">Trace the largest possible circle through full shoulder range. Slow and deliberate — not a windmill.</p>
+      <p class="ex-tag">Shoulder joint</p>
+    </div>
+    <div class="ex-row">
+      <div class="ex-top"><span class="ex-name">Wrist circles + flex/extend</span><span class="ex-badge">10 each way</span></div>
+      <p class="ex-note">Hands clasped, full circles. Then extend flat, then flex. Desk workers carry chronic wrist compression.</p>
+      <p class="ex-tag">Wrist prep</p>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-head"><span class="card-head-title">Phase 3 — Activation</span><span class="card-head-sub">2 min</span></div>
+    <div class="ex-row">
+      <div class="ex-top"><span class="ex-name">Band pull-aparts</span><span class="ex-badge">2 × 20</span></div>
+      <p class="ex-note">Arms straight, pull band until it touches chest. Slow return. Activates rear delts and rhomboids before pressing.</p>
+      <p class="ex-tag">Rear delt</p>
+    </div>
+    <div class="ex-row">
+      <div class="ex-top"><span class="ex-name">Chin tucks</span><span class="ex-badge">15 reps</span></div>
+      <p class="ex-note">Draw head straight back, hold 2s. Resets forward head posture. Sets neck safely for pressing and pulling.</p>
+      <p class="ex-tag">Cervical spine</p>
+    </div>
+  </div>
+
+  <p class="slabel">Conditioning day — Sat · 8 min</p>
+  <div class="card">
+    <div class="card-head"><span class="card-head-title">General prep + dynamic activation</span><span class="card-head-sub">8 min</span></div>
+    <div class="ex-row"><div class="ex-top"><span class="ex-name">Standing hip circles</span><span class="ex-badge">10 each dir.</span></div></div>
+    <div class="ex-row"><div class="ex-top"><span class="ex-name">Ankle circles</span><span class="ex-badge">10 each way / foot</span></div><p class="ex-note">Seated, foot off floor. Jump rope and box jumps load this joint from rep 1.</p></div>
+    <div class="ex-row"><div class="ex-top"><span class="ex-name">Arm circles</span><span class="ex-badge">10 each dir.</span></div></div>
+    <div class="ex-row"><div class="ex-top"><span class="ex-name">Torso rotations</span><span class="ex-badge">10 / side</span></div></div>
+    <div class="ex-row"><div class="ex-top"><span class="ex-name">World's greatest stretch</span><span class="ex-badge">3 / side</span></div></div>
+    <div class="ex-row"><div class="ex-top"><span class="ex-name">Glute bridge</span><span class="ex-badge">15 reps</span></div><p class="ex-note">KB swings default to lower back if glutes are cold. Fire them before anything.</p></div>
+    <div class="ex-row"><div class="ex-top"><span class="ex-name">High knees — slow and deliberate</span><span class="ex-badge">20 total</span></div></div>
+    <div class="ex-row"><div class="ex-top"><span class="ex-name">Lateral shuffles</span><span class="ex-badge">2 × 10m each</span></div><p class="ex-note">Low stance. Final full-body temp raise before the circuit.</p></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════ -->
+<!-- PANE: WEEK 1                              -->
+<!-- ══════════════════════════════════════════ -->
+<div class="pane" id="tab-w1">
+  <div class="alert alert-i" style="margin-top:12px">ℹ Week 1 — minor components at introductory level. All strength sessions unchanged. Tap each day to expand.</div>
+
+  <div class="week-overview">
+    <div class="wov-cell"><div class="wov-day">MON</div><div class="wov-type">Lower A</div><div class="wov-eve" style="color:var(--text4)">No run</div></div>
+    <div class="wov-cell"><div class="wov-day">TUE</div><div class="wov-type">Upper Push</div><div class="wov-eve">Intervals</div></div>
+    <div class="wov-cell wov-rest"><div class="wov-day">WED</div><div class="wov-type">Rest</div></div>
+    <div class="wov-cell"><div class="wov-day">THU</div><div class="wov-type">Lower B</div><div class="wov-eve" style="color:var(--text4)">No run</div></div>
+    <div class="wov-cell"><div class="wov-day">FRI</div><div class="wov-type">Upper Pull</div><div class="wov-eve">Easy run</div></div>
+    <div class="wov-cell"><div class="wov-day">SAT</div><div class="wov-type">Cond.</div><div class="wov-eve">Easy jog</div></div>
+    <div class="wov-cell"><div class="wov-day">SUN</div><div class="wov-type">Lower C</div><div class="wov-eve" style="color:var(--text4)">No run</div></div>
+  </div>
+
+  <!-- MON -->
+  <div class="day-card">
+    <div class="day-head" onclick="tog('w1mon',this)">
+      <div class="day-dot dot-lower"></div>
+      <div class="day-info">
+        <div class="day-name">Monday — Lower A</div>
+        <div class="day-sub">Squat focus · Mob 13 min · +Feet</div>
+      </div>
+      <div class="day-right"><span class="badge badge-grn">+Feet</span><span class="day-chev">›</span></div>
+    </div>
+    <div class="day-body" id="w1mon">
+      <div class="sess-block">
+        <div class="sess-label">Pre-workout · 13 min — lower body protocol</div>
+        <p style="font-size:12px;color:var(--text3)">Foam roll quads + IT band → Hip flexor + Pigeon + Couch + Adductor rock → Ankle drill · Clamshells · Glute bridge · Leg swings · WGS · Squat hold 60s</p>
+      </div>
+      <div class="sess-block">
+        <div class="sess-label">Main session — Lower A · Squat focus</div>
+        <ul class="ex-list">
+          <li><span class="li-name">Back squat<span class="li-note">Primary quad/glute driver. Foundation lift for 2+ years. Add weight weekly.</span></span><span class="li-sets">4 × 5</span></li>
+          <li><span class="li-name">Bulgarian split squat<span class="li-note">Best single-leg strength builder. Fixes imbalances. Runs better when both legs are equal.</span></span><span class="li-sets">3 × 8 / side</span></li>
+          <li><span class="li-name">Romanian deadlift<span class="li-note">Hip hinge pattern, hamstring length + strength. Carries over directly to running stride.</span></span><span class="li-sets">3 × 10</span></li>
+          <li><span class="li-name">Walking lunges<span class="li-note">Hip stability under movement — mimics running gait mechanics.</span></span><span class="li-sets">3 × 10 / side</span></li>
+          <li><span class="li-name">Standing calf raise<span class="li-note">Calf is the primary force absorber in running. Non-negotiable for runners.</span></span><span class="li-sets">4 × 15</span></li>
+          <li><span class="li-name">McGill Big 3<span class="li-note">Bird dog · Curl-up · Side plank. Spinal stability protocol. Do every lower session, forever.</span></span><span class="li-sets">1 round</span></li>
+        </ul>
+      </div>
+      <div class="sess-block">
+        <div class="sess-label">Minor add — Foot conditioning · 5 min</div>
+        <div class="minor-block">
+          <div class="minor-title">Week 1 — intrinsic activation</div>
+          <ul class="ex-list grn-list">
+            <li><span class="li-name">Toe spreads — hold all 5 toes wide</span><span class="li-sets">3 × 10s</span></li>
+            <li><span class="li-name">Short foot / arch raise — dome arch, no toe curl</span><span class="li-sets">3 × 15 / side</span></li>
+            <li><span class="li-name">Single leg balance — barefoot, eyes open</span><span class="li-sets">2 × 30s / side</span></li>
+            <li><span class="li-name">Towel scrunches — grab towel with toes</span><span class="li-sets">2 × 20 / side</span></li>
+          </ul>
+        </div>
+      </div>
+      <div class="sess-block">
+        <div class="sess-label">Evening — No run</div>
+        <p style="font-size:12px;color:var(--text3)">Heavy squat day. Quad and glute adaptation needs undisturbed recovery. Running post-squat accelerates fatigue without aerobic benefit.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- TUE -->
+  <div class="day-card">
+    <div class="day-head" onclick="tog('w1tue',this)">
+      <div class="day-dot dot-upper"></div>
+      <div class="day-info">
+        <div class="day-name">Tuesday — Upper Push</div>
+        <div class="day-sub">Push focus · Mob 7 min · +Neck · Intervals eve</div>
+      </div>
+      <div class="day-right"><span class="badge badge-warn">+Neck</span><span class="day-chev">›</span></div>
+    </div>
+    <div class="day-body" id="w1tue">
+      <div class="sess-block">
+        <div class="sess-label">Pre-workout · 7 min — upper body protocol</div>
+        <p style="font-size:12px;color:var(--text3)">T-spine foam roll · Doorway pec stretch → Thread the needle · Shoulder CARs · Wrist circles → Band pull-aparts · Chin tucks</p>
+      </div>
+      <div class="sess-block">
+        <div class="sess-label">Main session — Upper Push</div>
+        <ul class="ex-list">
+          <li><span class="li-name">Barbell bench press<span class="li-note">Primary horizontal push. Scalable forever. Full shoulder health when done with good form.</span></span><span class="li-sets">4 × 5</span></li>
+          <li><span class="li-name">Overhead press (barbell)<span class="li-note">Best shoulder strength builder. Trains overhead stability critical for running arm drive and posture.</span></span><span class="li-sets">4 × 6</span></li>
+          <li><span class="li-name">Incline dumbbell press<span class="li-note">Upper chest and anterior delt. DB allows natural wrist path — joint-friendly long term.</span></span><span class="li-sets">3 × 10</span></li>
+          <li><span class="li-name">Cable lateral raise<span class="li-note">Constant tension throughout. Healthier on rotator cuff than DB lateral for high reps over years.</span></span><span class="li-sets">3 × 15 / side</span></li>
+          <li><span class="li-name">Cable face pull<span class="li-note">Rear delt + external rotator. Keeps shoulders healthy under all that pressing volume. Forever exercise.</span></span><span class="li-sets">3 × 15</span></li>
+          <li><span class="li-name">Tricep pushdown (rope)<span class="li-note">Elbow health and pressing strength. Rope allows natural forearm rotation.</span></span><span class="li-sets">3 × 12</span></li>
+        </ul>
+      </div>
+      <div class="sess-block">
+        <div class="sess-label">Minor add — Neck strengthening · 5 min</div>
+        <div class="minor-block">
+          <div class="minor-title">Week 1 — isometric foundation</div>
+          <ul class="ex-list">
+            <li><span class="li-name">Chin tucks — draw back, 2s hold</span><span class="li-sets">3 × 15</span></li>
+            <li><span class="li-name">Isometric forward — palm on forehead, resist</span><span class="li-sets">2 × 10s</span></li>
+            <li><span class="li-name">Isometric backward — palms behind head, resist</span><span class="li-sets">2 × 10s</span></li>
+            <li><span class="li-name">Isometric lateral — palm on temple, resist each side</span><span class="li-sets">2 × 10s / side</span></li>
+          </ul>
+        </div>
+      </div>
+      <div class="sess-block">
+        <div class="sess-label">Evening run — Interval session · W1 · ~3.5 km total</div>
+        <div class="minor-block run-bg">
+          <div class="minor-title run-t">Best run day — legs fully rested from Wednesday rest</div>
+          <ul class="ex-list run-list">
+            <li><span class="li-name">Warm-up walk → easy jog</span><span class="li-sets">5 min</span></li>
+            <li><span class="li-name">400m run at effort 7/10 + 90s walk rest<span class="li-note">5 complete rounds. Not a sprint — effort where you can say a word but not hold a conversation.</span></span><span class="li-sets">5 rounds</span></li>
+            <li><span class="li-name">Cooldown walk</span><span class="li-sets">3 min</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WED -->
+  <div class="rest-card">Wednesday — Complete rest. No gym, no run, no mobility.</div>
+
+  <!-- THU -->
+  <div class="day-card">
+    <div class="day-head" onclick="tog('w1thu',this)">
+      <div class="day-dot dot-lower"></div>
+      <div class="day-info">
+        <div class="day-name">Thursday — Lower B</div>
+        <div class="day-sub">Hinge focus · Mob 13 min · +Feet</div>
+      </div>
+      <div class="day-right"><span class="badge badge-grn">+Feet</span><span class="day-chev">›</span></div>
+    </div>
+    <div class="day-body" id="w1thu">
+      <div class="sess-block">
+        <div class="sess-label">Pre-workout · 13 min — same as Monday</div>
+      </div>
+      <div class="sess-block">
+        <div class="sess-label">Main session — Lower B · Hinge focus</div>
+        <ul class="ex-list">
+          <li><span class="li-name">Conventional deadlift<span class="li-note">The king of posterior chain. Builds everything: hamstrings, glutes, traps, erectors. Scalable for a lifetime.</span></span><span class="li-sets">4 × 4</span></li>
+          <li><span class="li-name">Barbell hip thrust<span class="li-note">Highest glute activation exercise known. Critical for running power and knee protection.</span></span><span class="li-sets">4 × 10</span></li>
+          <li><span class="li-name">Good morning<span class="li-note">Posterior chain with spinal erector strengthening. Keeps lower back healthy under deadlift and run load.</span></span><span class="li-sets">3 × 10</span></li>
+          <li><span class="li-name">Hamstring curl (machine)<span class="li-note">Knee flexion strength balances quad dominance. Essential for knee health as running volume climbs.</span></span><span class="li-sets">3 × 12</span></li>
+          <li><span class="li-name">Nordic hamstring curl<span class="li-note">Best hamstring injury prevention exercise. Builds eccentric strength — what running uses most.</span></span><span class="li-sets">3 × 6</span></li>
+          <li><span class="li-name">Tibialis raise<span class="li-note">Shin strength. Prevents shin splints as run volume increases. Do not skip this.</span></span><span class="li-sets">3 × 15</span></li>
+          <li><span class="li-name">Pallof press<span class="li-note">Anti-rotation core. The core job in running is to resist rotation — this trains exactly that.</span></span><span class="li-sets">3 × 12 / side</span></li>
+        </ul>
+      </div>
+      <div class="sess-block">
+        <div class="sess-label">Minor add — Foot conditioning · 5 min</div>
+        <div class="minor-block">
+          <div class="minor-title">Week 1 — repeat Monday exactly</div>
+          <ul class="ex-list grn-list">
+            <li><span class="li-name">Toe spreads</span><span class="li-sets">3 × 10s</span></li>
+            <li><span class="li-name">Short foot / arch raise</span><span class="li-sets">3 × 15 / side</span></li>
+            <li><span class="li-name">Single leg balance, eyes open</span><span class="li-sets">2 × 30s / side</span></li>
+            <li><span class="li-name">Towel scrunches</span><span class="li-sets">2 × 20 / side</span></li>
+          </ul>
+        </div>
+      </div>
+      <div class="sess-block">
+        <div class="sess-label">Evening — No run</div>
+        <p style="font-size:12px;color:var(--text3)">Deadlift day. Posterior chain + spinal erectors need recovery. Running post-deadlift compounds fatigue and injury risk.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- FRI -->
+  <div class="day-card">
+    <div class="day-head" onclick="tog('w1fri',this)">
+      <div class="day-dot dot-upper"></div>
+      <div class="day-info">
+        <div class="day-name">Friday — Upper Pull</div>
+        <div class="day-sub">Pull focus · Mob 7 min · +Traps +Neck · Easy run eve</div>
+      </div>
+      <div class="day-right"><span class="badge badge-warn">+Traps +Neck</span><span class="day-chev">›</span></div>
+    </div>
+    <div class="day-body" id="w1fri">
+      <div class="sess-block">
+        <div class="sess-label">Pre-workout · 7 min — same as Tuesday</div>
+      </div>
+      <div class="sess-block">
+        <div class="sess-label">Main session — Upper Pull</div>
+        <ul class="ex-list">
+          <li><span class="li-name">Weighted pull-up<span class="li-note">Best lat and scapular retractor. Scalable with a belt forever. Key for running posture.</span></span><span class="li-sets">4 × 5</span></li>
+          <li><span class="li-name">Barbell bent-over row<span class="li-note">Horizontal pull — builds the full posterior upper chain. Counterbalances all that pressing.</span></span><span class="li-sets">4 × 6</span></li>
+          <li><span class="li-name">Cable row (neutral grip)<span class="li-note">Mid-back thickness. Cable keeps tension at end range where barbell drops off.</span></span><span class="li-sets">3 × 10</span></li>
+          <li><span class="li-name">Cable face pull<span class="li-note">External rotator health. A second set here — running posture demands healthy rear delts.</span></span><span class="li-sets">3 × 15</span></li>
+          <li><span class="li-name">Hammer curl<span class="li-note">Brachialis and brachioradialis. Thicker forearms, healthier elbows long term vs supinated curls only.</span></span><span class="li-sets">3 × 12</span></li>
+          <li><span class="li-name">Band pull-apart<span class="li-note">High rep rear delt and rhomboid work. 2 minutes, massive long-term shoulder health benefit.</span></span><span class="li-sets">3 × 20</span></li>
+        </ul>
+      </div>
+      <div class="sess-block">
+        <div class="sess-label">Minor add — Trap work · 5 min</div>
+        <div class="minor-block">
+          <div class="minor-title">Week 1 — basic load</div>
+          <ul class="ex-list">
+            <li><span class="li-name">Barbell shrug — moderate load, 1s hold at top</span><span class="li-sets">3 × 12</span></li>
+            <li><span class="li-name">Cable face pull — trap focused, elbows high</span><span class="li-sets">3 × 15</span></li>
+          </ul>
+        </div>
+      </div>
+      <div class="sess-block">
+        <div class="sess-label">Minor add — Neck · 5 min</div>
+        <div class="minor-block">
+          <div class="minor-title">Week 1 — same as Tuesday</div>
+          <ul class="ex-list">
+            <li><span class="li-name">Chin tucks</span><span class="li-sets">3 × 15</span></li>
+            <li><span class="li-name">Isometric forward / backward / lateral</span><span class="li-sets">2 × 10s each</span></li>
+          </ul>
+        </div>
+      </div>
+      <div class="sess-block">
+        <div class="sess-label">Evening run — Easy steady state · W1 · 3 km</div>
+        <div class="minor-block run-bg">
+          <div class="minor-title run-t">Legs fresh — upper-only day. Pure Zone 2 aerobic base.</div>
+          <ul class="ex-list run-list">
+            <li><span class="li-name">Warm-up walk</span><span class="li-sets">3 min</span></li>
+            <li><span class="li-name">Continuous easy jog — conversational pace (5–6/10 effort)</span><span class="li-sets">3 km</span></li>
+            <li><span class="li-name">Cooldown walk + calf stretch on step</span><span class="li-sets">5 min</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SAT -->
+  <div class="day-card">
+    <div class="day-head" onclick="tog('w1sat',this)">
+      <div class="day-dot dot-cond"></div>
+      <div class="day-info">
+        <div class="day-name">Saturday — Conditioning</div>
+        <div class="day-sub">Circuit · Mob 8 min · Easy jog eve</div>
+      </div>
+      <div class="day-right"><span class="badge badge-run">+Easy jog</span><span class="day-chev">›</span></div>
+    </div>
+    <div class="day-body" id="w1sat">
+      <div class="sess-block">
+        <div class="sess-label">Pre-workout · 8 min — conditioning protocol</div>
+        <p style="font-size:12px;color:var(--text3)">Hip circles · Ankle circles · Arm circles · Torso rotations → WGS · Glute bridge · High knees · Lateral shuffles</p>
+      </div>
+      <div class="sess-block">
+        <div class="sess-label">Main session — Conditioning circuit</div>
+        <ul class="ex-list">
+          <li><span class="li-name">Kettlebell swing<span class="li-note">Hip hinge power under fatigue. Posterior chain meets cardiovascular — perfect hybrid exercise.</span></span><span class="li-sets">4 × 8</span></li>
+          <li><span class="li-name">Box jump<span class="li-note">Reactive power and landing mechanics. Builds the fast-twitch that running and squatting alone won't.</span></span><span class="li-sets">3 × 5</span></li>
+          <li><span class="li-name">Sled push<span class="li-note">Quad and glute strength under locomotion. Near-zero injury risk, very high transfer to running.</span></span><span class="li-sets">3 × 20m</span></li>
+          <li><span class="li-name">Battle ropes</span><span class="li-sets">3 × 30s</span></li>
+          <li><span class="li-name">Jump rope</span><span class="li-sets">3 × 60s</span></li>
+          <li><span class="li-name">Ab wheel rollout<span class="li-note">Anti-extension core. Most demanding core exercise — builds the stiffness running demands.</span></span><span class="li-sets">3 × 10</span></li>
+          <li><span class="li-name">Hanging leg raise<span class="li-note">Hip flexor and lower ab strength. Improves knee drive mechanics in running.</span></span><span class="li-sets">3 × 10</span></li>
+          <li><span class="li-name">Copenhagen plank<span class="li-note">Adductor and hip stability. Groin protection as run volume climbs — often skipped, never should be.</span></span><span class="li-sets">3 × 15s / side</span></li>
+        </ul>
+      </div>
+      <div class="sess-block">
+        <div class="sess-label">Evening run — Recovery jog · W1 · 2 km (optional)</div>
+        <div class="minor-block run-bg">
+          <div class="minor-title run-t">Short and easy only — conditioning was already enough today</div>
+          <ul class="ex-list run-list">
+            <li><span class="li-name">Easy jog — flat route, 5/10 effort max</span><span class="li-sets">2 km</span></li>
+            <li><span class="li-name">Skip entirely if sled was very heavy — no guilt</span><span class="li-sets">Optional</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SUN -->
+  <div class="day-card">
+    <div class="day-head" onclick="tog('w1sun',this)">
+      <div class="day-dot dot-lower"></div>
+      <div class="day-info">
+        <div class="day-name">Sunday — Lower C</div>
+        <div class="day-sub">Weak points · Mob 13 min · +Feet</div>
+      </div>
+      <div class="day-right"><span class="badge badge-grn">+Feet</span><span class="day-chev">›</span></div>
+    </div>
+    <div class="day-body" id="w1sun">
+      <div class="sess-block">
+        <div class="sess-label">Pre-workout · 13 min — same as Monday / Thursday</div>
+      </div>
+      <div class="sess-block">
+        <div class="sess-label">Main session — Lower C · Weak point and accessory</div>
+        <ul class="ex-list">
+          <li><span class="li-name">Barbell hip thrust<span class="li-note">Second weekly glute session. Glutes are the engine of running — they need volume.</span></span><span class="li-sets">4 × 12</span></li>
+          <li><span class="li-name">Single-leg Romanian deadlift<span class="li-note">Best single-leg posterior chain balance exercise. Fixes the asymmetries that cause running injuries.</span></span><span class="li-sets">3 × 10 / side</span></li>
+          <li><span class="li-name">Terminal knee extension (TKE) — band<span class="li-note">VMO activation and knee stability. Builds the quad control that protects knees at high run mileage.</span></span><span class="li-sets">3 × 15 / side</span></li>
+          <li><span class="li-name">Lateral band walk<span class="li-note">Glute medius endurance. This muscle fatigues first in running and causes IT band and knee issues.</span></span><span class="li-sets">3 × 15 / side</span></li>
+          <li><span class="li-name">Cable hip abduction<span class="li-note">Loaded glute medius. Complements band walks with progressive overload.</span></span><span class="li-sets">3 × 15 / side</span></li>
+          <li><span class="li-name">Trap bar jump / loaded jump<span class="li-note">Power development without spinal load. Builds the reactive strength running in longer distances demands.</span></span><span class="li-sets">4 × 5</span></li>
+          <li><span class="li-name">Single-leg calf raise<span class="li-note">Each leg handles ~2.5× bodyweight per step running. Train each leg alone.</span></span><span class="li-sets">3 × 15 / side</span></li>
+          <li><span class="li-name">Tibialis raise</span><span class="li-sets">3 × 15</span></li>
+        </ul>
+      </div>
+      <div class="sess-block">
+        <div class="sess-label">Minor add — Foot conditioning · 5 min</div>
+        <div class="minor-block">
+          <div class="minor-title">Week 1 — 3rd time this week, same protocol</div>
+          <ul class="ex-list grn-list">
+            <li><span class="li-name">Toe spreads</span><span class="li-sets">3 × 10s</span></li>
+            <li><span class="li-name">Short foot / arch raise</span><span class="li-sets">3 × 15 / side</span></li>
+            <li><span class="li-name">Single leg balance, eyes open</span><span class="li-sets">2 × 30s / side</span></li>
+            <li><span class="li-name">Towel scrunches</span><span class="li-sets">2 × 20 / side</span></li>
+          </ul>
+        </div>
+      </div>
+      <div class="sess-block">
+        <div class="sess-label">Evening — No run</div>
+        <p style="font-size:12px;color:var(--text3)">Hip thrust + Nordic + single-leg work day. Posterior chain needs rest. Tuesday is the next run — come in fresh.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════ -->
+<!-- PANE: WEEK 2                              -->
+<!-- ══════════════════════════════════════════ -->
+<div class="pane" id="tab-w2">
+  <div class="alert alert-s" style="margin-top:12px">✓ Week 2 — only minor components and run distances progress. All strength sessions and mobility protocols are identical to Week 1. After Sunday, repeat the full block.</div>
+
+  <div class="week-overview">
+    <div class="wov-cell"><div class="wov-day">MON</div><div class="wov-type">Lower A</div><div class="wov-eve" style="color:var(--text4)">No run</div></div>
+    <div class="wov-cell"><div class="wov-day">TUE</div><div class="wov-type">Upper Push</div><div class="wov-eve">Intervals ↑</div></div>
+    <div class="wov-cell wov-rest"><div class="wov-day">WED</div><div class="wov-type">Rest</div></div>
+    <div class="wov-cell"><div class="wov-day">THU</div><div class="wov-type">Lower B</div><div class="wov-eve" style="color:var(--text4)">No run</div></div>
+    <div class="wov-cell"><div class="wov-day">FRI</div><div class="wov-type">Upper Pull</div><div class="wov-eve">Easy run ↑</div></div>
+    <div class="wov-cell"><div class="wov-day">SAT</div><div class="wov-type">Cond.</div><div class="wov-eve">Easy jog ↑</div></div>
+    <div class="wov-cell"><div class="wov-day">SUN</div><div class="wov-type">Lower C</div><div class="wov-eve" style="color:var(--text4)">No run</div></div>
+  </div>
+
+  <!-- MON W2 -->
+  <div class="day-card">
+    <div class="day-head" onclick="tog('w2mon',this)">
+      <div class="day-dot dot-lower"></div>
+      <div class="day-info"><div class="day-name">Monday — Lower A</div><div class="day-sub">Same squat session · Foot W2 progressed</div></div>
+      <div class="day-right"><span class="badge badge-grn">Feet ↑</span><span class="day-chev">›</span></div>
+    </div>
+    <div class="day-body" id="w2mon">
+      <div class="sess-block"><div class="sess-label">Pre-workout + Main session — identical to Week 1</div></div>
+      <div class="sess-block">
+        <div class="sess-label">Minor add — Foot conditioning · Week 2</div>
+        <div class="minor-block grn">
+          <div class="minor-title grn">Week 2 — add load and complexity</div>
+          <ul class="ex-list grn-list">
+            <li><span class="li-name">Short foot + mini squat — maintain arch dome through partial squat</span><span class="li-sets">3 × 10 / side</span></li>
+            <li><span class="li-name">Single leg balance — eyes closed (removes visual compensation)</span><span class="li-sets">3 × 20s / side</span></li>
+            <li><span class="li-name">Heel-to-toe walk — straight line, arms out, eyes forward</span><span class="li-sets">2 × 10m</span></li>
+            <li><span class="li-name">Big toe press — press big toe down, lift other 4 toes</span><span class="li-sets">3 × 10 each pattern</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TUE W2 -->
+  <div class="day-card">
+    <div class="day-head" onclick="tog('w2tue',this)">
+      <div class="day-dot dot-upper"></div>
+      <div class="day-info"><div class="day-name">Tuesday — Upper Push</div><div class="day-sub">Same push session · Neck W2 · Intervals progressed</div></div>
+      <div class="day-right"><span class="badge badge-warn">Neck ↑</span><span class="day-chev">›</span></div>
+    </div>
+    <div class="day-body" id="w2tue">
+      <div class="sess-block"><div class="sess-label">Pre-workout + Main session — identical to Week 1</div></div>
+      <div class="sess-block">
+        <div class="sess-label">Minor add — Neck · Week 2</div>
+        <div class="minor-block grn">
+          <div class="minor-title grn">Week 2 — add resistance and length</div>
+          <ul class="ex-list grn-list">
+            <li><span class="li-name">Chin tuck + nod — tuck then add small forward nod at end range</span><span class="li-sets">3 × 12</span></li>
+            <li><span class="li-name">Light band neck rotation — full range against resistance</span><span class="li-sets">2 × 12 / side</span></li>
+            <li><span class="li-name">Lateral neck flexion hold — ear toward shoulder, light hand pressure</span><span class="li-sets">3 × 20s / side</span></li>
+            <li><span class="li-name">Upper trap stretch — cross arm overhead pull after each hold</span><span class="li-sets">2 × 30s / side</span></li>
+          </ul>
+        </div>
+      </div>
+      <div class="sess-block">
+        <div class="sess-label">Evening run — Intervals progressed · W2 · ~4.5 km total</div>
+        <div class="minor-block run-bg">
+          <div class="minor-title run-t">Week 2 — longer reps, same rest, same effort</div>
+          <ul class="ex-list run-list">
+            <li><span class="li-name">Warm-up walk → easy jog</span><span class="li-sets">5 min</span></li>
+            <li><span class="li-name">600m run at effort 7/10 + 90s walk<span class="li-note">Same effort as W1, longer rep. Trains sustained pace — direct 5 km preparation.</span></span><span class="li-sets">5 rounds</span></li>
+            <li><span class="li-name">Cooldown walk</span><span class="li-sets">3 min</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="rest-card">Wednesday — Complete rest. Identical to Week 1.</div>
+
+  <!-- THU W2 -->
+  <div class="day-card">
+    <div class="day-head" onclick="tog('w2thu',this)">
+      <div class="day-dot dot-lower"></div>
+      <div class="day-info"><div class="day-name">Thursday — Lower B</div><div class="day-sub">Same hinge session · Foot W2 progressed</div></div>
+      <div class="day-right"><span class="badge badge-grn">Feet ↑</span><span class="day-chev">›</span></div>
+    </div>
+    <div class="day-body" id="w2thu">
+      <div class="sess-block"><div class="sess-label">Pre-workout + Main session — identical to Week 1</div></div>
+      <div class="sess-block">
+        <div class="sess-label">Minor add — Foot conditioning · Week 2 (same as Monday)</div>
+        <div class="minor-block grn">
+          <div class="minor-title grn">Week 2 — progressed</div>
+          <ul class="ex-list grn-list">
+            <li><span class="li-name">Short foot + mini squat</span><span class="li-sets">3 × 10 / side</span></li>
+            <li><span class="li-name">Single leg balance, eyes closed</span><span class="li-sets">3 × 20s / side</span></li>
+            <li><span class="li-name">Heel-to-toe walk</span><span class="li-sets">2 × 10m</span></li>
+            <li><span class="li-name">Big toe press</span><span class="li-sets">3 × 10 each pattern</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FRI W2 -->
+  <div class="day-card">
+    <div class="day-head" onclick="tog('w2fri',this)">
+      <div class="day-dot dot-upper"></div>
+      <div class="day-info"><div class="day-name">Friday — Upper Pull</div><div class="day-sub">Same pull session · Traps W2 + Neck W2 · Easy run progressed</div></div>
+      <div class="day-right"><span class="badge badge-warn">Traps ↑ Neck ↑</span><span class="day-chev">›</span></div>
+    </div>
+    <div class="day-body" id="w2fri">
+      <div class="sess-block"><div class="sess-label">Pre-workout + Main session — identical to Week 1</div></div>
+      <div class="sess-block">
+        <div class="sess-label">Minor add — Trap work · Week 2</div>
+        <div class="minor-block grn">
+          <div class="minor-title grn">Week 2 — add carry and overload</div>
+          <ul class="ex-list grn-list">
+            <li><span class="li-name">Barbell shrug — heavier than W1, 1s hold at top</span><span class="li-sets">3 × 12</span></li>
+            <li><span class="li-name">Farmer's carry — heavy DBs, walk 20m</span><span class="li-sets">3 × 20m</span></li>
+            <li><span class="li-name">Rack pull just above knee — heavy, upper trap overload at lockout</span><span class="li-sets">2 × 6</span></li>
+          </ul>
+        </div>
+      </div>
+      <div class="sess-block">
+        <div class="sess-label">Minor add — Neck · Week 2 (same as Tuesday)</div>
+        <div class="minor-block grn">
+          <div class="minor-title grn">Week 2 — progressed</div>
+          <ul class="ex-list grn-list">
+            <li><span class="li-name">Chin tuck + nod</span><span class="li-sets">3 × 12</span></li>
+            <li><span class="li-name">Band neck rotation</span><span class="li-sets">2 × 12 / side</span></li>
+            <li><span class="li-name">Lateral neck hold + upper trap stretch</span><span class="li-sets">3 × 20s + 30s / side</span></li>
+          </ul>
+        </div>
+      </div>
+      <div class="sess-block">
+        <div class="sess-label">Evening run — Easy steady state · W2 · 4 km</div>
+        <div class="minor-block run-bg">
+          <div class="minor-title run-t">Week 2 — push to 4 km, same easy pace zone</div>
+          <ul class="ex-list run-list">
+            <li><span class="li-name">Warm-up walk</span><span class="li-sets">3 min</span></li>
+            <li><span class="li-name">Continuous easy jog — conversational pace (5–6/10 effort)</span><span class="li-sets">4 km</span></li>
+            <li><span class="li-name">Cooldown walk + calf + hip flexor stretch</span><span class="li-sets">5–7 min</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SAT W2 -->
+  <div class="day-card">
+    <div class="day-head" onclick="tog('w2sat',this)">
+      <div class="day-dot dot-cond"></div>
+      <div class="day-info"><div class="day-name">Saturday — Conditioning</div><div class="day-sub">Same circuit · Easy jog slightly longer</div></div>
+      <div class="day-right"><span class="badge badge-run">Jog ↑</span><span class="day-chev">›</span></div>
+    </div>
+    <div class="day-body" id="w2sat">
+      <div class="sess-block"><div class="sess-label">Pre-workout + Main session — identical to Week 1</div></div>
+      <div class="sess-block">
+        <div class="sess-label">Evening run — Recovery jog · W2 · 3 km (optional)</div>
+        <div class="minor-block run-bg">
+          <div class="minor-title run-t">Week 2 — slightly longer, still easy effort only</div>
+          <ul class="ex-list run-list">
+            <li><span class="li-name">Easy jog — flat, effort 5/10</span><span class="li-sets">3 km</span></li>
+            <li><span class="li-name">Skip if you feel beaten up — recovery is training</span><span class="li-sets">Optional</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SUN W2 -->
+  <div class="day-card">
+    <div class="day-head" onclick="tog('w2sun',this)">
+      <div class="day-dot dot-lower"></div>
+      <div class="day-info"><div class="day-name">Sunday — Lower C</div><div class="day-sub">Same weak point session · Foot W2 progressed</div></div>
+      <div class="day-right"><span class="badge badge-grn">Feet ↑</span><span class="day-chev">›</span></div>
+    </div>
+    <div class="day-body" id="w2sun">
+      <div class="sess-block"><div class="sess-label">Pre-workout + Main session — identical to Week 1</div></div>
+      <div class="sess-block">
+        <div class="sess-label">Minor add — Foot conditioning · Week 2 (same as Mon/Thu)</div>
+        <div class="minor-block grn">
+          <div class="minor-title grn">Week 2 — 3rd time this week, progressed</div>
+          <ul class="ex-list grn-list">
+            <li><span class="li-name">Short foot + mini squat</span><span class="li-sets">3 × 10 / side</span></li>
+            <li><span class="li-name">Single leg balance, eyes closed</span><span class="li-sets">3 × 20s / side</span></li>
+            <li><span class="li-name">Heel-to-toe walk</span><span class="li-sets">2 × 10m</span></li>
+            <li><span class="li-name">Big toe press</span><span class="li-sets">3 × 10 each pattern</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════ -->
+<!-- PANE: MINOR COMPONENTS                   -->
+<!-- ══════════════════════════════════════════ -->
+<div class="pane" id="tab-minor">
+  <div class="alert alert-i" style="margin-top:12px">ℹ Why these three: neck fixes desk-posture cascade. Feet fix arch collapse — direct upstream cause of knee issues. Traps are undertrained in PPL and critical for deadlift lockout and running posture.</div>
+
+  <p class="slabel">Neck — Tue + Fri · 5 min · 2×/week</p>
+  <div class="card">
+    <div class="phase-bar">Week 1 — isometric foundation</div>
+    <div class="ex-row"><div class="ex-top"><span class="ex-name">Chin tucks</span><span class="ex-badge">3 × 15</span></div><p class="ex-note">Draw head straight back (double chin), hold 2s. Trains deep cervical flexors — postural, not superficial.</p></div>
+    <div class="ex-row"><div class="ex-top"><span class="ex-name">Isometric forward</span><span class="ex-badge">2 × 10s</span></div><p class="ex-note">Palm flat on forehead. Push forward with head, hand resists. Head stays still.</p></div>
+    <div class="ex-row"><div class="ex-top"><span class="ex-name">Isometric backward</span><span class="ex-badge">2 × 10s</span></div><p class="ex-note">Clasp hands behind head. Push backward, hands resist.</p></div>
+    <div class="ex-row"><div class="ex-top"><span class="ex-name">Isometric lateral</span><span class="ex-badge">2 × 10s / side</span></div><p class="ex-note">Palm on temple. Push sideways, hand resists. Protects cervical spine under axial load.</p></div>
+    <div class="phase-bar">Week 2 — add resistance and length</div>
+    <div class="ex-row"><div class="ex-top"><span class="ex-name">Chin tuck + nod</span><span class="ex-badge">3 × 12</span></div><p class="ex-note">Chin tuck first, then add small forward nod at full end range.</p></div>
+    <div class="ex-row"><div class="ex-top"><span class="ex-name">Band neck rotation</span><span class="ex-badge">2 × 12 / side</span></div><p class="ex-note">Light band anchored at head height. Rotate through full range against resistance.</p></div>
+    <div class="ex-row"><div class="ex-top"><span class="ex-name">Lateral flexion hold + upper trap stretch</span><span class="ex-badge">3 × 20s + 30s / side</span></div><p class="ex-note">Ear toward shoulder, hold 20s, then cross arm overhead pull for trap stretch.</p></div>
+  </div>
+
+  <p class="slabel">Foot conditioning — Mon + Thu + Sun · 5 min · 3×/week</p>
+  <div class="card">
+    <div class="phase-bar">Week 1 — intrinsic muscle activation</div>
+    <div class="ex-row"><div class="ex-top"><span class="ex-name">Toe spreads</span><span class="ex-badge">3 × 10s hold</span></div><p class="ex-note">Spread all 5 toes as wide as possible. If you can't, that is exactly the problem to fix.</p></div>
+    <div class="ex-row"><div class="ex-top"><span class="ex-name">Short foot / arch raise</span><span class="ex-badge">3 × 15 / side</span></div><p class="ex-note">Dome the arch — heel toward ball of foot, no toe curl. Trains abductor hallucis, the key arch muscle.</p></div>
+    <div class="ex-row"><div class="ex-top"><span class="ex-name">Single leg balance — eyes open</span><span class="ex-badge">2 × 30s / side</span></div><p class="ex-note">Barefoot, slight knee bend. Maintain arch dome throughout.</p></div>
+    <div class="ex-row"><div class="ex-top"><span class="ex-name">Towel scrunches</span><span class="ex-badge">2 × 20 / side</span></div><p class="ex-note">Towel on floor, scrunch toward you using toes only. Toe flexor strength for push-off in every stride.</p></div>
+    <div class="phase-bar">Week 2 — add load and complexity</div>
+    <div class="ex-row"><div class="ex-top"><span class="ex-name">Short foot + mini squat</span><span class="ex-badge">3 × 10 / side</span></div><p class="ex-note">Maintain arch dome while doing a small partial squat. Functional loaded position.</p></div>
+    <div class="ex-row"><div class="ex-top"><span class="ex-name">Single leg balance — eyes closed</span><span class="ex-badge">3 × 20s / side</span></div><p class="ex-note">Removes visual compensation. Foot does all proprioceptive work alone.</p></div>
+    <div class="ex-row"><div class="ex-top"><span class="ex-name">Heel-to-toe walk</span><span class="ex-badge">2 × 10m</span></div><p class="ex-note">Heel directly in front of opposite toe, straight line, arms out, eyes forward.</p></div>
+    <div class="ex-row"><div class="ex-top"><span class="ex-name">Big toe press</span><span class="ex-badge">3 × 10 / pattern</span></div><p class="ex-note">Press big toe into floor, lift other 4. Then switch. Trains toe independence critical for push-off.</p></div>
+  </div>
+
+  <p class="slabel">Trap training — Friday only · 5–6 min · 1×/week</p>
+  <div class="card">
+    <div class="phase-bar">Week 1 — basic load</div>
+    <div class="ex-row"><div class="ex-top"><span class="ex-name">Barbell shrug</span><span class="ex-badge">3 × 12</span></div><p class="ex-note">Moderate load. Straight up — no rolling. Hold 1s at top.</p></div>
+    <div class="ex-row"><div class="ex-top"><span class="ex-name">Cable face pull — trap focused</span><span class="ex-badge">3 × 15</span></div><p class="ex-note">Rope at forehead height, elbows flared high. Second face pull of the day — deliberate trap intent.</p></div>
+    <div class="phase-bar">Week 2 — add carry and overload</div>
+    <div class="ex-row"><div class="ex-top"><span class="ex-name">Barbell shrug — heavier</span><span class="ex-badge">3 × 12</span></div><p class="ex-note">Progressive overload on upper trap. Same form — straight up, 1s hold.</p></div>
+    <div class="ex-row"><div class="ex-top"><span class="ex-name">Farmer's carry</span><span class="ex-badge">3 × 20m</span></div><p class="ex-note">Heavy DBs. Isometric trap + upper back under locomotion. Builds trap endurance running demands.</p></div>
+    <div class="ex-row"><div class="ex-top"><span class="ex-name">Rack pull — just above knee</span><span class="ex-badge">2 × 6</span></div><p class="ex-note">Heavy. Upper trap overload at lockout. Builds thickness shrugs alone can't reach.</p></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════ -->
+<!-- PANE: EVENING RUN                         -->
+<!-- ══════════════════════════════════════════ -->
+<div class="pane" id="tab-run">
+  <div class="alert alert-r" style="margin-top:12px">🏃 Run logic: Mon/Thu/Sun = heavy leg days, no run. Tue/Fri = upper days, quality runs. Sat = short easy jog only. 3 runs/week, ~8.5 km W1 → ~11.5 km W2. Goal: 10 km single run — ~7 month build with shin management.</div>
+
+  <p class="slabel">Goal — 10 km single run</p>
+  <div class="card">
+    <div class="card-head">
+      <span class="card-head-title">7-month build · shin-aware progression</span>
+      <span class="card-head-sub">5–7% weekly</span>
+    </div>
+    <div style="padding:12px 14px">
+      <div class="prog-wrap">
+        <div class="prog-label"><span>Current — under 3 km</span><span style="color:var(--text3)">starting line</span></div>
+        <div class="prog-track"><div class="prog-fill" style="width:25%"></div></div>
+      </div>
+      <div class="prog-wrap">
+        <div class="prog-label"><span>Month 2 — 4.5 km long run</span><span style="color:var(--run)">base built</span></div>
+        <div class="prog-track"><div class="prog-fill" style="width:45%"></div></div>
+      </div>
+      <div class="prog-wrap">
+        <div class="prog-label"><span>Month 4 — 6.5 km long run</span><span style="color:var(--run)">build phase</span></div>
+        <div class="prog-track"><div class="prog-fill" style="width:65%"></div></div>
+      </div>
+      <div class="prog-wrap">
+        <div class="prog-label"><span>Month 5 — 8 km milestone</span><span style="color:var(--run)">interim goal</span></div>
+        <div class="prog-track"><div class="prog-fill" style="width:80%"></div></div>
+      </div>
+      <div class="prog-wrap">
+        <div class="prog-label"><span>Month 7 — 10 km goal hit</span><span style="color:var(--run);font-weight:600">🎯 target</span></div>
+        <div class="prog-track"><div class="prog-fill" style="width:100%"></div></div>
+      </div>
+      <p style="font-size:11px;color:var(--text3);margin-top:10px;line-height:1.6"><b style="color:var(--text2)">Why 7 months, not 4:</b> Active shin management caps safe weekly distance increase at 5–7% (not the standard 10%). Every 4th week = deload (drop volume 20%, let bone/tendon catch up). One shin flare = 1–2 week dial-back — already built into the timeline.</p>
+    </div>
+  </div>
+
+  <p class="slabel">Phase map</p>
+  <div class="card">
+    <div class="phase-bar">Base — months 1–2 · adaptation</div>
+    <div style="padding:10px 14px;font-size:12px;color:var(--text2);line-height:1.6">
+      Long run grows <b>3 → 4.5 km</b>. Slow on purpose. Tendons and shin bone need 6–8 weeks to remodel — pushing here is the #1 cause of running injury. Pace = conversational only. <span style="color:var(--shin)">Shin-rule: any pain &gt; 3/10, stop the run.</span>
+    </div>
+    <div class="phase-bar">Build 1 — months 3–4 · adding load</div>
+    <div style="padding:10px 14px;font-size:12px;color:var(--text2);line-height:1.6">
+      Long run <b>4.5 → 6.5 km</b>. Third run becomes a true 3rd run (not just a jog). Introduce one tempo segment on Tuesday. Friday easy stays easy.
+    </div>
+    <div class="phase-bar">Build 2 — month 5 · first milestone</div>
+    <div style="padding:10px 14px;font-size:12px;color:var(--text2);line-height:1.6">
+      Long run <b>6.5 → 8 km</b>. <b style="color:var(--run)">8 km hit.</b> Biggest psychological win — most runners quit before this. Keep Saturday short.
+    </div>
+    <div class="phase-bar">Peak — month 6 · the patience month</div>
+    <div style="padding:10px 14px;font-size:12px;color:var(--text2);line-height:1.6">
+      Long run <b>8 → 9.5 km</b>. Highest injury risk window — you feel strong, want to push, body still catching up. Trust the deload weeks.
+    </div>
+    <div class="phase-bar">Goal — month 7 · 10 km</div>
+    <div style="padding:10px 14px;font-size:12px;color:var(--text2);line-height:1.6">
+      Long run <b>9.5 → 10 km</b>. <b style="color:var(--run)">Goal hit.</b> After this: maintain at 8 km long run or pick a new goal (sub-60 min 10 km, half-marathon base, etc.).
+    </div>
+  </div>
+
+  <p class="slabel">Current block — Week 1 / Week 2</p>
+  <div class="card">
+    <div class="card-head"><span class="card-head-title">Where you are in the 7-month arc</span><span class="card-head-sub">base phase</span></div>
+    <div style="padding:12px 14px">
+      <div class="prog-wrap">
+        <div class="prog-label"><span>Week 1 — ~8.5 km/week</span><span style="color:var(--run)">base</span></div>
+        <div class="prog-track"><div class="prog-fill" style="width:35%"></div></div>
+      </div>
+      <div class="prog-wrap">
+        <div class="prog-label"><span>Week 2 — ~11.5 km/week</span><span style="color:var(--run)">building</span></div>
+        <div class="prog-track"><div class="prog-fill" style="width:45%"></div></div>
+      </div>
+      <p style="font-size:11px;color:var(--text3);margin-top:10px">Each block repeat: add 1 interval rep or +100m to Tuesday. Add +0.5 km to Friday. Saturday stays capped at 3 km always. <b style="color:var(--warn)">Every 4th block = deload</b> — drop weekly volume 20%, keep intensity.</p>
+    </div>
+  </div>
+
+  <div class="sub-tabs">
+    <div class="sub-tab run-st active" onclick="showSub('run','rw1',this)">Week 1 runs</div>
+    <div class="sub-tab run-st" onclick="showSub('run','rw2',this)">Week 2 runs</div>
+    <div class="sub-tab run-st" onclick="showSub('run','rguide',this)">Form + guide</div>
+  </div>
+
+  <div class="sub-pane active" id="run-rw1">
+    <p class="slabel">Tuesday — Intervals · W1 · ~3.5 km</p>
+    <div class="card">
+      <div class="card-head"><span class="card-head-title">Structure</span><span class="card-head-sub">Best run day</span></div>
+      <div style="padding:12px 14px">
+        <div class="tmill-row"><div class="tmill-step">1</div><div class="tmill-info"><div class="tmill-name">Warm-up</div><div class="tmill-note">Walk 2 min then easy jog 3 min. Bring HR up before the intervals.</div></div><div class="tmill-val">5 min</div></div>
+        <div class="tmill-row"><div class="tmill-step">2</div><div class="tmill-info"><div class="tmill-name">400m run interval × 5</div><div class="tmill-note">Effort 7/10 — can say a word, not a full sentence. 90s walk rest between each. Not a sprint.</div></div><div class="tmill-val">5 × 400m</div></div>
+        <div class="tmill-row"><div class="tmill-step">3</div><div class="tmill-info"><div class="tmill-name">Cooldown walk</div><div class="tmill-note">Optional: calf raises 2 × 10 to flush the legs.</div></div><div class="tmill-val">3 min</div></div>
+      </div>
+    </div>
+
+    <p class="slabel">Friday — Easy run · W1 · 3 km</p>
+    <div class="card">
+      <div class="card-head"><span class="card-head-title">Structure</span><span class="card-head-sub">Zone 2 base</span></div>
+      <div style="padding:12px 14px">
+        <div class="tmill-row"><div class="tmill-step">1</div><div class="tmill-info"><div class="tmill-name">Warm-up walk</div></div><div class="tmill-val">3 min</div></div>
+        <div class="tmill-row"><div class="tmill-step">2</div><div class="tmill-info"><div class="tmill-name">Continuous easy jog</div><div class="tmill-note">Effort 5–6/10. Full conversation possible. Nasal breathing = you're in Zone 2. If you're mouth breathing only, slow down.</div></div><div class="tmill-val">3 km</div></div>
+        <div class="tmill-row"><div class="tmill-step">3</div><div class="tmill-info"><div class="tmill-name">Cooldown + stretch</div><div class="tmill-note">Walk 3 min. Calf on step 30s each. Hip flexor lunge 30s each.</div></div><div class="tmill-val">5 min</div></div>
+      </div>
+    </div>
+
+    <p class="slabel">Saturday — Recovery jog · W1 · 2 km (optional)</p>
+    <div class="card">
+      <div class="card-head"><span class="card-head-title">Structure</span><span class="card-head-sub">Post-conditioning · easy only</span></div>
+      <div style="padding:12px 14px">
+        <div class="tmill-row"><div class="tmill-step">1</div><div class="tmill-info"><div class="tmill-name">Easy flat jog</div><div class="tmill-note">Effort 5/10 maximum. This is active recovery, not training. If legs feel heavy from sled — skip entirely.</div></div><div class="tmill-val">2 km</div></div>
+      </div>
+    </div>
+    <div style="margin:8px 16px 0;padding:10px 12px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-sm)">
+      <p style="font-size:12px;color:var(--text3)">Week 1 total: <b style="color:var(--run)">~8.5 km</b> · Tue 3.5 + Fri 3 + Sat 2</p>
+    </div>
+  </div>
+
+  <div class="sub-pane" id="run-rw2">
+    <p class="slabel">Tuesday — Intervals · W2 · ~4.5 km</p>
+    <div class="card">
+      <div class="card-head"><span class="card-head-title">Structure</span><span class="card-head-sub">Longer reps, same effort</span></div>
+      <div style="padding:12px 14px">
+        <div class="tmill-row"><div class="tmill-step">1</div><div class="tmill-info"><div class="tmill-name">Warm-up</div></div><div class="tmill-val">5 min</div></div>
+        <div class="tmill-row"><div class="tmill-step">2</div><div class="tmill-info"><div class="tmill-name">600m run interval × 5</div><div class="tmill-note">Same 7/10 effort, longer rep. 600m teaches sustained pace beyond 400m comfort — direct 5 km training. 90s walk rest.</div></div><div class="tmill-val">5 × 600m</div></div>
+        <div class="tmill-row"><div class="tmill-step">3</div><div class="tmill-info"><div class="tmill-name">Cooldown walk + quad stretch</div></div><div class="tmill-val">3 min</div></div>
+      </div>
+    </div>
+
+    <p class="slabel">Friday — Easy run · W2 · 4 km</p>
+    <div class="card">
+      <div class="card-head"><span class="card-head-title">Structure</span><span class="card-head-sub">Longest run this block</span></div>
+      <div style="padding:12px 14px">
+        <div class="tmill-row"><div class="tmill-step">1</div><div class="tmill-info"><div class="tmill-name">Warm-up walk</div></div><div class="tmill-val">3 min</div></div>
+        <div class="tmill-row"><div class="tmill-step">2</div><div class="tmill-info"><div class="tmill-name">Continuous easy jog</div><div class="tmill-note">Effort 5–6/10. If struggling at 3 km, walk 1 min then finish. Do not race this — it is base building.</div></div><div class="tmill-val">4 km</div></div>
+        <div class="tmill-row"><div class="tmill-step">3</div><div class="tmill-info"><div class="tmill-name">Cooldown + full stretch</div><div class="tmill-note">Walk 5 min. Calf on step · Seated hamstring · Hip flexor lunge — 30s each.</div></div><div class="tmill-val">7 min</div></div>
+      </div>
+    </div>
+
+    <p class="slabel">Saturday — Recovery jog · W2 · 3 km (optional)</p>
+    <div class="card">
+      <div class="card-head"><span class="card-head-title">Structure</span><span class="card-head-sub">Still easy effort only</span></div>
+      <div style="padding:12px 14px">
+        <div class="tmill-row"><div class="tmill-step">1</div><div class="tmill-info"><div class="tmill-name">Easy flat jog</div><div class="tmill-note">Ran 4 km yesterday and conditioning this morning. If you feel beat up, skip. No shame.</div></div><div class="tmill-val">3 km</div></div>
+      </div>
+    </div>
+    <div style="margin:8px 16px 0;padding:10px 12px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-sm)">
+      <p style="font-size:12px;color:var(--text2)">Week 2 total: <b style="color:var(--run)">~11.5 km</b> · Tue 4.5 + Fri 4 + Sat 3</p>
+    </div>
+  </div>
+
+  <div class="sub-pane" id="run-rguide">
+    <p class="slabel">Running form — hybrid athlete priorities</p>
+    <div class="card">
+      <div class="ex-row"><div class="ex-top"><span class="ex-name">Cadence over stride length</span><span class="ex-badge blue">Priority 1</span></div><p class="ex-note">Strength athletes default to long strides — high injury risk. Target 170–180 steps/min. Count one foot for 30s × 2. Shorter, quicker steps.</p></div>
+      <div class="ex-row"><div class="ex-top"><span class="ex-name">Foot strike — midfoot</span><span class="ex-badge blue">Injury prevention</span></div><p class="ex-note">With 5 years of squatting you have ankle strength. Land midfoot, not heel. Your foot conditioning directly builds this capacity.</p></div>
+      <div class="ex-row"><div class="ex-top"><span class="ex-name">Arms — 90°, don't cross midline</span><span class="ex-badge blue">Economy</span></div><p class="ex-note">Drive elbows back, not forward. Your trap and neck work stabilises the upper back here.</p></div>
+      <div class="ex-row"><div class="ex-top"><span class="ex-name">Posture — tall, lean from ankles</span><span class="ex-badge blue">Posture</span></div><p class="ex-note">Chin tucked (neck work trains this). Core braced — not rigid, just switched on. Your deadlift bracing transfers directly.</p></div>
+      <div class="ex-row"><div class="ex-top"><span class="ex-name">Nasal breathing = Zone 2 test</span><span class="ex-badge blue">Aerobic base</span></div><p class="ex-note">If you can only mouth-breathe on an easy run, you're going too fast. Slow down. Nasal breathing is the litmus test.</p></div>
+    </div>
+
+    <p class="slabel">Same-day training management</p>
+    <div class="card">
+      <div class="ex-row"><div class="ex-top"><span class="ex-name">Gap between sessions</span><span class="ex-badge">4–8 hrs</span></div><p class="ex-note">Minimum 4 hours between morning gym and evening run. Allows glycogen partial resynthesis and CNS recovery.</p></div>
+      <div class="ex-row"><div class="ex-top"><span class="ex-name">Post-gym nutrition before run</span><span class="ex-badge">Eat after gym</span></div><p class="ex-note">Proper meal — rice, protein, some fat. Don't run fasted post-gym. Wait 90 min after eating before running.</p></div>
+      <div class="ex-row"><div class="ex-top"><span class="ex-name">Hydration</span><span class="ex-badge">3–4 L/day</span></div><p class="ex-note">Two sessions = double sweat. At 83 kg in Greater Noida climate, minimum 3–4 L on training days. Electrolytes if heavy sweating.</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════ -->
+<!-- PANE: COMBINED SESSION                    -->
+<!-- ══════════════════════════════════════════ -->
+<div class="pane" id="tab-combo">
+  <div class="alert alert-c" style="margin-top:12px">⚡ Use when you have one window only. Max 1–2× per week — not a replacement for the full split. Treadmill is built into the session, not an add-on. Shin + running-specific strength is included in every version.</div>
+
+  <p class="slabel">Which session to use?</p>
+  <div class="card">
+    <div class="ex-row"><div class="ex-top"><span class="ex-name">Upper day (Tue or Fri)?</span><span class="ex-badge combo">→ Upper combined</span></div><p class="ex-note">Best option. Legs completely fresh — treadmill can be a proper quality run, not just a jog.</p></div>
+    <div class="ex-row"><div class="ex-top"><span class="ex-name">Lower day (Mon, Thu or Sun)?</span><span class="ex-badge combo">→ Lower combined</span></div><p class="ex-note">Legs already loaded. Treadmill here is short and easy — maintenance only, not training.</p></div>
+    <div class="ex-row"><div class="ex-top"><span class="ex-name">No specific day — fully missed a session?</span><span class="ex-badge combo">→ Full body combined</span></div><p class="ex-note">Standalone. One compound per pattern + run. Best for unpredictable weeks or travel.</p></div>
+  </div>
+
+  <div class="sub-tabs">
+    <div class="sub-tab combo-st active" onclick="showSub('combo','cup',this)">Upper combined</div>
+    <div class="sub-tab combo-st" onclick="showSub('combo','clo',this)">Lower combined</div>
+    <div class="sub-tab combo-st" onclick="showSub('combo','cfb',this)">Full body combined</div>
+  </div>
+
+  <!-- ── UPPER COMBINED ── -->
+  <div class="sub-pane active" id="combo-cup">
+    <div class="alert alert-c" style="margin-top:8px">Best combined day. Upper gym does not tax leg muscles — treadmill can be a real run session with intervals or steady state, not just a maintenance jog.</div>
+
+    <div class="combo-summary">
+      <div class="combo-summary-item"><div class="combo-summary-val">~65</div><div class="combo-summary-key">total min</div></div>
+      <div class="combo-summary-item"><div class="combo-summary-val">~2.5 km</div><div class="combo-summary-key">treadmill</div></div>
+      <div class="combo-summary-item"><div class="combo-summary-val">Push + Pull</div><div class="combo-summary-key">strength</div></div>
+      <div class="combo-summary-item"><div class="combo-summary-val">Shin ✓</div><div class="combo-summary-key">run prep</div></div>
+    </div>
+
+    <p class="slabel">Mobility · 5 min (abbreviated upper)</p>
+    <div class="card">
+      <ul class="ex-list" style="padding:0 14px">
+        <li><span class="li-name">T-spine foam roll</span><span class="li-sets">60s</span></li>
+        <li><span class="li-name">Doorway pec stretch</span><span class="li-sets">30s / side</span></li>
+        <li><span class="li-name">Shoulder CARs</span><span class="li-sets">5 each way</span></li>
+        <li><span class="li-name">Band pull-aparts</span><span class="li-sets">20 reps</span></li>
+        <li><span class="li-name">Chin tucks</span><span class="li-sets">15 reps</span></li>
+      </ul>
+    </div>
+
+    <p class="slabel">Shin + running prep · 4 min — do BEFORE strength</p>
+    <div class="card">
+      <div class="card-head" style="background:linear-gradient(135deg,var(--shin-l),#fff8f6);border-color:var(--shin-b)"><span class="card-head-title" style="color:var(--shin)">🦵 Shin / ankle activation — prevents treadmill shin pain</span></div>
+      <ul class="ex-list shin-list" style="padding:0 14px">
+        <li><span class="li-name">Tibialis raise — stand heels on step, raise toes up and lower<span class="li-note">Primary shin strengthener. Do this before the treadmill every single combined session without exception.</span></span><span class="li-sets">3 × 15</span></li>
+        <li><span class="li-name">Ankle circles — slow, full range<span class="li-note">Preps the ankle joint before treadmill impact load.</span></span><span class="li-sets">10 each way / side</span></li>
+        <li><span class="li-name">Calf raise — slow eccentric (3s down)<span class="li-note">Loads the Achilles eccentrically. Running creates Achilles demand — pre-load it before the run.</span></span><span class="li-sets">2 × 15</span></li>
+        <li><span class="li-name">Single leg balance — barefoot, eyes closed<span class="li-note">30s each. Activates foot + shin stabilisers. Quick proprioception primer before treadmill.</span></span><span class="li-sets">30s / side</span></li>
+      </ul>
+    </div>
+
+    <p class="slabel">Strength · ~30 min — push/pull superset to save time</p>
+    <div class="card">
+      <div class="card-head"><span class="card-head-title">Upper — Push + Pull supersets</span><span class="card-head-sub">A + B = no rest between</span></div>
+      <ul class="ex-list" style="padding:0 14px">
+        <li><span class="li-name">A — Barbell bench press<span class="li-note">Keep full primary volume. Do not reduce on combined days.</span></span><span class="li-sets">4 × 5</span></li>
+        <li><span class="li-name">B — Weighted pull-up (superset with bench)<span class="li-note">Bench rest = pull-up. Saves ~10 min total while maintaining full strength stimulus.</span></span><span class="li-sets">4 × 5</span></li>
+        <li><span class="li-name">A — Overhead press<span class="li-note">Second primary. Non-negotiable even on combined days.</span></span><span class="li-sets">3 × 6</span></li>
+        <li><span class="li-name">B — Barbell row (superset with OHP)</span><span class="li-sets">3 × 6</span></li>
+        <li><span class="li-name">Cable face pull<span class="li-note">Shoulder health. Always in every upper session.</span></span><span class="li-sets">2 × 15</span></li>
+        <li><span class="li-name">Tricep pushdown + Hammer curl (superset)<span class="li-note">One set each back to back. Arms in under 5 min.</span></span><span class="li-sets">2 × 12 each</span></li>
+      </ul>
+    </div>
+
+    <p class="slabel">Treadmill · ~20 min — quality run (legs fresh)</p>
+    <div class="card">
+      <div class="card-head" style="background:linear-gradient(135deg,var(--run-l),#f0faf7);border-color:var(--run-b)"><span class="card-head-title" style="color:var(--run)">Treadmill protocol — upper combined</span><span class="card-head-sub">Legs unused = real run</span></div>
+      <div style="padding:12px 14px">
+        <div class="tmill-row"><div class="tmill-step">1</div><div class="tmill-info"><div class="tmill-name">Walk transition</div><div class="tmill-note">3.5–4.0 km/h for 2 min. Let HR settle from lifting. Don't rush into the run.</div></div><div class="tmill-val">2 min</div></div>
+        <div class="tmill-row"><div class="tmill-step">2</div><div class="tmill-info"><div class="tmill-name">Easy jog warm-up</div><div class="tmill-note">8.0–8.5 km/h. 3 min easy before picking up. This is where Zone 2 base is built.</div></div><div class="tmill-val">3 min</div></div>
+        <div class="tmill-row"><div class="tmill-step">3</div><div class="tmill-info"><div class="tmill-name">Main run — Option A: Steady state</div><div class="tmill-note">8.5–9.5 km/h. Conversational pace, effort 6/10. Use when it's a lower-intensity week or you feel tired from pushing the week prior.</div></div><div class="tmill-val">10 min</div></div>
+        <div class="tmill-row"><div class="tmill-step">3</div><div class="tmill-info"><div class="tmill-name">Main run — Option B: Treadmill intervals</div><div class="tmill-note">Alternate 1 min at 10.5–11.5 km/h, 1 min at 7.5 km/h walk. 5 rounds. Use when energy is good — this is the quality option.</div></div><div class="tmill-val">10 min</div></div>
+        <div class="tmill-row"><div class="tmill-step">4</div><div class="tmill-info"><div class="tmill-name">Pickup finish (optional)</div><div class="tmill-note">Last 2 min at 10.0 km/h if you chose Option A. Skip if intervals done above.</div></div><div class="tmill-val">2 min</div></div>
+        <div class="tmill-row"><div class="tmill-step">5</div><div class="tmill-info"><div class="tmill-name">Cooldown walk + shin/calf stretch</div><div class="tmill-note">Walk 3 min at 3.5 km/h. Calf on step 30s each. Tibialis stretch: kneel and sit back on heels 30s. Always do this — shin tightness builds silently.</div></div><div class="tmill-val">3 min</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── LOWER COMBINED ── -->
+  <div class="sub-pane" id="combo-clo">
+    <div class="alert alert-c" style="margin-top:8px">Legs are doing heavy work in the gym. Treadmill is short and easy — aerobic maintenance only. Shin work still comes first. Do not push treadmill pace on lower combined days.</div>
+
+    <div class="combo-summary">
+      <div class="combo-summary-item"><div class="combo-summary-val">~60</div><div class="combo-summary-key">total min</div></div>
+      <div class="combo-summary-item"><div class="combo-summary-val">~1.5 km</div><div class="combo-summary-key">treadmill</div></div>
+      <div class="combo-summary-item"><div class="combo-summary-val">Squat/DL</div><div class="combo-summary-key">strength</div></div>
+      <div class="combo-summary-item"><div class="combo-summary-val">Shin ✓</div><div class="combo-summary-key">run prep</div></div>
+    </div>
+
+    <p class="slabel">Mobility · 7 min (abbreviated lower)</p>
+    <div class="card">
+      <ul class="ex-list" style="padding:0 14px">
+        <li><span class="li-name">Hip flexor lunge stretch</span><span class="li-sets">45s / side</span></li>
+        <li><span class="li-name">Pigeon pose or figure-4</span><span class="li-sets">30s / side</span></li>
+        <li><span class="li-name">Band clamshells</span><span class="li-sets">2 × 12 / side</span></li>
+        <li><span class="li-name">Glute bridge activation</span><span class="li-sets">20 reps</span></li>
+        <li><span class="li-name">World's greatest stretch</span><span class="li-sets">3 / side</span></li>
+        <li><span class="li-name">Ankle wall drill — heel flat, knee to wall</span><span class="li-sets">10 / side</span></li>
+      </ul>
+    </div>
+
+    <p class="slabel">Shin + running strength · 5 min — do BEFORE strength</p>
+    <div class="card">
+      <div class="card-head" style="background:linear-gradient(135deg,var(--shin-l),#fff8f6);border-color:var(--shin-b)"><span class="card-head-title" style="color:var(--shin)">🦵 Shin / ankle + running-specific strength</span></div>
+      <ul class="ex-list shin-list" style="padding:0 14px">
+        <li><span class="li-name">Tibialis raise<span class="li-note">Non-negotiable before any treadmill session on leg day. Shin splints happen most after squat or deadlift days when tibialis is already fatigued.</span></span><span class="li-sets">3 × 15</span></li>
+        <li><span class="li-name">Nordic hamstring curl<span class="li-note">Best eccentric hamstring exercise. Running hamstring tears always happen eccentrically — this is the prevention lift.</span></span><span class="li-sets">3 × 5</span></li>
+        <li><span class="li-name">Single-leg calf raise — slow eccentric 4s down<span class="li-note">Each leg individually. Running loads calf at ~2.5× bodyweight per step — train it accordingly.</span></span><span class="li-sets">3 × 12 / side</span></li>
+        <li><span class="li-name">TKE — terminal knee extension, band<span class="li-note">VMO and knee stability. Running post-squat day = high knee stress. TKE is the 5-min fix.</span></span><span class="li-sets">2 × 15 / side</span></li>
+      </ul>
+    </div>
+
+    <p class="slabel">Strength · ~35 min — primary lifts only, skip most accessory</p>
+    <div class="card">
+      <div class="card-head"><span class="card-head-title">Lower — Compounds only</span><span class="card-head-sub">No accessory today — treadmill takes that slot</span></div>
+      <ul class="ex-list" style="padding:0 14px">
+        <li><span class="li-name">Back squat or Deadlift<span class="li-note">Whichever is the day's primary. Full prescribed sets and reps — never reduce the main compound even on combined days.</span></span><span class="li-sets">4 × 5 or 4 × 4</span></li>
+        <li><span class="li-name">Bulgarian split squat<span class="li-note">Best single-leg strength builder. Too important for running balance to cut even on combined days.</span></span><span class="li-sets">3 × 8 / side</span></li>
+        <li><span class="li-name">Barbell hip thrust<span class="li-note">Glute power is running power. Keep this every lower session no matter what.</span></span><span class="li-sets">3 × 10</span></li>
+        <li><span class="li-name">McGill Big 3<span class="li-note">Bird dog + curl-up + side plank. Core stability takes 4 min. Never skip — spinal load from squats/DL needs this counterbalance.</span></span><span class="li-sets">1 round</span></li>
+      </ul>
+    </div>
+
+    <p class="slabel">Treadmill · ~15 min — easy maintenance only</p>
+    <div class="card">
+      <div class="card-head" style="background:linear-gradient(135deg,var(--run-l),#f0faf7);border-color:var(--run-b)"><span class="card-head-title" style="color:var(--run)">Treadmill protocol — post lower session</span><span class="card-head-sub">Legs fatigued — do not push</span></div>
+      <div style="padding:12px 14px">
+        <div class="tmill-row"><div class="tmill-step">1</div><div class="tmill-info"><div class="tmill-name">Walk transition</div><div class="tmill-note">3.5 km/h for 3 min. Quads and posterior chain are pumped from lifting — walk them into the run slowly.</div></div><div class="tmill-val">3 min</div></div>
+        <div class="tmill-row"><div class="tmill-step">2</div><div class="tmill-info"><div class="tmill-name">Easy jog — strict effort 5/10</div><div class="tmill-note">7.0–8.0 km/h. This is aerobic habit maintenance, not a training session. Nasal breathing only — if you're mouth-breathing, slow to 6.5. Do not push pace after squat or deadlift.</div></div><div class="tmill-val">10 min</div></div>
+        <div class="tmill-row"><div class="tmill-step">3</div><div class="tmill-info"><div class="tmill-name">Walk cooldown + mandatory stretch</div><div class="tmill-note">Walk 2 min. Then: calf on step 30s each side + hip flexor lunge 30s each + tibialis stretch (kneel, sit on heels) 20s. Do not skip this after lower combined.</div></div><div class="tmill-val">4–5 min</div></div>
+      </div>
+    </div>
+    <div class="alert alert-w" style="margin-top:8px">If legs feel very beat up after the strength session — skip the treadmill. Recovery is training. The shin and running strength work you did earlier is enough aerobic + running carry for today.</div>
+  </div>
+
+  <!-- ── FULL BODY COMBINED ── -->
+  <div class="sub-pane" id="combo-cfb">
+    <div class="alert alert-c" style="margin-top:8px">Standalone session. Use when skipping a full split day. One compound per movement pattern + dedicated shin/running strength block + treadmill. This covers everything a hybrid athlete needs in one session.</div>
+
+    <div class="combo-summary">
+      <div class="combo-summary-item"><div class="combo-summary-val">~70</div><div class="combo-summary-key">total min</div></div>
+      <div class="combo-summary-item"><div class="combo-summary-val">~2 km</div><div class="combo-summary-key">treadmill</div></div>
+      <div class="combo-summary-item"><div class="combo-summary-val">All patterns</div><div class="combo-summary-key">strength</div></div>
+      <div class="combo-summary-item"><div class="combo-summary-val">Shin + Run ✓</div><div class="combo-summary-key">full block</div></div>
+    </div>
+
+    <p class="slabel">Mobility · 6 min</p>
+    <div class="card">
+      <ul class="ex-list" style="padding:0 14px">
+        <li><span class="li-name">Hip flexor lunge stretch</span><span class="li-sets">45s / side</span></li>
+        <li><span class="li-name">World's greatest stretch</span><span class="li-sets">3 / side</span></li>
+        <li><span class="li-name">Thoracic foam roll</span><span class="li-sets">60s</span></li>
+        <li><span class="li-name">Shoulder CARs</span><span class="li-sets">5 each way</span></li>
+        <li><span class="li-name">Band pull-aparts</span><span class="li-sets">20 reps</span></li>
+        <li><span class="li-name">Glute bridge activation</span><span class="li-sets">20 reps</span></li>
+      </ul>
+    </div>
+
+    <p class="slabel">Shin + running-specific strength · 8 min — full block</p>
+    <div class="card">
+      <div class="card-head" style="background:linear-gradient(135deg,var(--shin-l),#fff8f6);border-color:var(--shin-b)"><span class="card-head-title" style="color:var(--shin)">🦵 Full shin + running strength block</span><span class="card-head-sub">Do before strength + treadmill</span></div>
+      <ul class="ex-list shin-list" style="padding:0 14px">
+        <li><span class="li-name">Tibialis raise<span class="li-note">Stand with heels on a step or weight plate, raise toes up fully and lower slowly. The most direct shin splint prevention exercise that exists.</span></span><span class="li-sets">3 × 15</span></li>
+        <li><span class="li-name">Nordic hamstring curl<span class="li-note">Kneel on mat, feet anchored under bench. Lower torso toward floor with straight body, catch with hands, push back. Eccentric hamstring king.</span></span><span class="li-sets">3 × 5</span></li>
+        <li><span class="li-name">Single-leg calf raise — 4s eccentric<span class="li-note">On a step, full range. 4 seconds down. Running loads the calf more than any gym exercise — this directly replicates that demand.</span></span><span class="li-sets">3 × 12 / side</span></li>
+        <li><span class="li-name">TKE — terminal knee extension, band<span class="li-note">VMO and knee stability under load. Critical whenever running follows gym in the same session.</span></span><span class="li-sets">2 × 15 / side</span></li>
+        <li><span class="li-name">Ankle circles + dorsiflexion stretch<span class="li-note">10 each way + hold 20s wall dorsiflexion each side. Ankle mobility directly limits running economy.</span></span><span class="li-sets">10 + 20s / side</span></li>
+        <li><span class="li-name">Short foot / arch raise<span class="li-note">Dome the arch, no toe curl. Foot intrinsic muscles are the last line of defence against shin splints — they absorb impact before the shin does.</span></span><span class="li-sets">2 × 15 / side</span></li>
+      </ul>
+    </div>
+
+    <p class="slabel">Strength · ~28 min — one compound per pattern, 3 sets</p>
+    <div class="card">
+      <div class="card-head"><span class="card-head-title">Full body — movement patterns covered</span><span class="card-head-sub">3 sets each, effort high</span></div>
+      <ul class="ex-list combo-list" style="padding:0 14px">
+        <li><span class="li-name">Back squat<span class="li-note">Knee-dominant lower. The irreplaceable compound. Never drop below 3 sets on combined days.</span></span><span class="li-sets">3 × 5</span></li>
+        <li><span class="li-name">Deadlift or RDL<span class="li-note">Hip-dominant lower. Use RDL if full deadlift same session as squat feels like too much volume.</span></span><span class="li-sets">3 × 5</span></li>
+        <li><span class="li-name">Barbell bench press<span class="li-note">Horizontal push. Keep the primary compound — don't substitute with machine.</span></span><span class="li-sets">3 × 5</span></li>
+        <li><span class="li-name">Weighted pull-up or Barbell row<span class="li-note">Pull pattern. Pick what's available. Superset with bench to save time.</span></span><span class="li-sets">3 × 6</span></li>
+        <li><span class="li-name">Cable face pull<span class="li-note">Shoulder health. Always. Non-negotiable in any upper session.</span></span><span class="li-sets">2 × 15</span></li>
+        <li><span class="li-name">Barbell hip thrust<span class="li-note">Glute power is running power. Two sets minimum even in full body combined.</span></span><span class="li-sets">2 × 12</span></li>
+        <li><span class="li-name">McGill Big 3<span class="li-note">Core stability. 4 min. Every session with a squat or deadlift must include this — no exceptions.</span></span><span class="li-sets">1 round</span></li>
+      </ul>
+    </div>
+
+    <p class="slabel">Treadmill · ~18 min — moderate effort</p>
+    <div class="card">
+      <div class="card-head" style="background:linear-gradient(135deg,var(--run-l),#f0faf7);border-color:var(--run-b)"><span class="card-head-title" style="color:var(--run)">Treadmill protocol — full body combined</span></div>
+      <div style="padding:12px 14px">
+        <div class="tmill-row"><div class="tmill-step">1</div><div class="tmill-info"><div class="tmill-name">Walk transition</div><div class="tmill-note">3.5 km/h. Legs did squats and deadlifts — walk at least 3 min before jogging.</div></div><div class="tmill-val">3 min</div></div>
+        <div class="tmill-row"><div class="tmill-step">2</div><div class="tmill-info"><div class="tmill-name">Easy continuous jog</div><div class="tmill-note">8.0–9.0 km/h, effort 5–6/10. Nasal breathing test — if mouth only, drop to 7.5. Pure Zone 2. Do not add intervals here — legs already did serious work.</div></div><div class="tmill-val">12 min</div></div>
+        <div class="tmill-row"><div class="tmill-step">3</div><div class="tmill-info"><div class="tmill-name">Cooldown walk + full stretch</div><div class="tmill-note">Walk 3 min. Calf stretch on step 30s each. Hip flexor lunge 30s each. Tibialis stretch (kneel + sit on heels) 20s. This matters — you did squats, DLs and a run in one session.</div></div><div class="tmill-val">3 min</div></div>
+      </div>
+    </div>
+    <div class="alert alert-w" style="margin-top:8px">Full body combined is the most demanding session in this plan. If you feel genuinely beat up after the strength section — skip the treadmill. The shin + running strength block already did its job. Rest is still training.</div>
+  </div>
+</div>
+
+</div><!-- end content -->
+
+<script>
+/* ============================================================
+   iOS Safari tab fix — clean rewrite
+   ------------------------------------------------------------
+   Problem we are solving:
+   - Old code mixed onclick="..." attributes WITH a touchend
+     listener that called preventDefault() + el.click(). On iOS
+     this caused either double-firing or the synthetic click to
+     be swallowed by the overflow-scroll container, leaving tabs
+     completely dead.
+   - Fix: use event delegation on document with a SINGLE click
+     listener. Click on iOS works reliably on any element that
+     has cursor:pointer (already set) — we just must not fight
+     it with preventDefault on touchend.
+   ============================================================ */
+
+function showMain(id, el) {
+  var panes = document.querySelectorAll('.pane');
+  for (var i = 0; i < panes.length; i++) panes[i].classList.remove('active');
+  var tabs = document.querySelectorAll('.nav-tab');
+  for (var j = 0; j < tabs.length; j++) tabs[j].classList.remove('active');
+  var pane = document.getElementById('tab-' + id);
+  if (pane) pane.classList.add('active');
+  if (el) el.classList.add('active');
+  var content = document.querySelector('.content');
+  if (content) content.scrollTop = 0;
+  window.scrollTo(0, 0);
+}
+
+function showSub(group, id, el) {
+  var parentPane = el.closest ? el.closest('.pane') : null;
+  if (parentPane) {
+    var subs = parentPane.querySelectorAll('.sub-pane');
+    for (var i = 0; i < subs.length; i++) subs[i].classList.remove('active');
+  }
+  var parentTabs = el.closest ? el.closest('.sub-tabs') : null;
+  if (parentTabs) {
+    var stabs = parentTabs.querySelectorAll('.sub-tab');
+    for (var j = 0; j < stabs.length; j++) stabs[j].classList.remove('active');
+  }
+  var target = document.getElementById(group + '-' + id);
+  if (target) target.classList.add('active');
+  if (el) el.classList.add('active');
+}
+
+function tog(id, headEl) {
+  var body = document.getElementById(id);
+  if (!body) return;
+  var isOpen = body.classList.toggle('open');
+  var chev = headEl ? headEl.querySelector('.day-chev') : null;
+  if (chev) chev.classList.toggle('open', isOpen);
+}
+
+/* ------------------------------------------------------------
+   Step 1 — on DOM ready, migrate every inline onclick="..."
+   to a parsed data structure stored on the element. We then
+   remove the onclick attribute so it cannot double-fire
+   alongside our delegated handler.
+   ------------------------------------------------------------ */
+function parseAndAttach() {
+  var all = document.querySelectorAll('.nav-tab, .sub-tab, .day-head');
+  for (var i = 0; i < all.length; i++) {
+    var el = all[i];
+    var oc = el.getAttribute('onclick');
+    if (oc) {
+      el.setAttribute('data-action', oc);
+      el.removeAttribute('onclick');
+    }
+    el.setAttribute('role', 'button');
+    el.setAttribute('tabindex', '0');
+  }
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', parseAndAttach);
+} else {
+  parseAndAttach();
+}
+
+/* ------------------------------------------------------------
+   Step 2 — single delegated click handler at document level.
+   This catches every tap and dispatches based on data-action.
+   On iOS Safari, click fires reliably on any element with
+   cursor:pointer, so we don't need touchend hacks at all.
+   ------------------------------------------------------------ */
+function handleTap(e) {
+  var node = e.target;
+  while (node && node !== document.body && node !== document) {
+    if (!node.getAttribute) { node = node.parentNode; continue; }
+    var action = node.getAttribute('data-action');
+    if (action) {
+      var m;
+      if ((m = action.match(/showMain\('([^']+)'/))) {
+        showMain(m[1], node);
+        return;
+      }
+      if ((m = action.match(/showSub\('([^']+)',\s*'([^']+)'/))) {
+        showSub(m[1], m[2], node);
+        return;
+      }
+      if ((m = action.match(/tog\('([^']+)'/))) {
+        tog(m[1], node);
+        return;
+      }
+    }
+    node = node.parentNode;
+  }
+}
+
+document.addEventListener('click', handleTap, false);
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function() {
+    navigator.serviceWorker.register('sw.js');
+  });
+}
+</script>
+</body>
+</html>
