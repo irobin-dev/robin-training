@@ -1,4 +1,4 @@
-const CACHE = 'robin-training-v1';
+const CACHE = 'robin-training-v2';
 
 const PRECACHE = [
   '.',
